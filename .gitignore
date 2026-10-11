@@ -1,0 +1,14 @@
+.workspace/
+.dub/
+__pycache__/
+*.o
+*.obj
+*.exe
+*.so
+*.dll
+*.dylib
+/build/
+/data/
+/tmp/
+/cache/
+*.log
