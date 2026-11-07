@@ -39,6 +39,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
+          git clone --depth 1 https://github.com/alex-1974/raster-d.git ../../../raster-d
           mkdir -p ../../../
           # Keep the dependency revision aligned with the JPEG metadata API.
           git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
@@ -61,6 +62,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
+          git clone --depth 1 https://github.com/alex-1974/raster-d.git ../../../raster-d
           mkdir -p ../../../
           # Keep the dependency revision aligned with the JPEG metadata API.
           git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
@@ -85,6 +87,7 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
+          git clone --depth 1 https://github.com/alex-1974/raster-d.git ../../../raster-d
           mkdir -p ../../../
           # Keep the dependency revision aligned with the JPEG metadata API.
           git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
