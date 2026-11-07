@@ -88,7 +88,7 @@ jobs:
           # Keep the dependency revision aligned with the JPEG metadata API.
           git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
       - name: Install independent GeoTIFF oracle
-        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-pil
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-pil imagemagick
       - uses: dlang-community/setup-dlang@v2
         with:
           compiler: ldc-latest
