@@ -1,0 +1,9 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"compression-d": {"path":"../../../../../compression-d"},
+		"containers-d": "0.3.1",
+		"imageio-d": {"path":"../.."},
+		"transport-d": {"path":"../../../transport-d"}
+	}
+}

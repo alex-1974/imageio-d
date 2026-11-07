@@ -1,0 +1,13 @@
+name "imageio-compression-consumer"
+description "Research-only TIFF Deflate consumer of compression-d"
+targetType "executable"
+sourcePaths "source"
+importPaths "source" "../tiff_core/source"
+sourceFiles "../tiff_core/source/ifd_result.d" "../tiff_core/source/payload_decode.d" "../tiff_core/source/block_bridge.d" "../tiff_core/source/bigtiff_header.d"
+dependency "compression-d" path="../../../../../compression-d"
+targetPath ".build"
+
+configuration "window" {
+    mainSourceFile "source/window_main.d"
+    excludedSourceFiles "source/consumer_main.d"
+}

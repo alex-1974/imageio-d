@@ -1,0 +1,6 @@
+name "imageio-png-rw-research"
+description "Research-only Pure-D PNG read/write subset"
+targetType "executable"
+sourcePaths "source"
+dependency "compression-d" path="../../../../../compression-d"
+targetPath ".build"
