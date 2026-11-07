@@ -100,6 +100,9 @@ jobs:
         with:
           compiler: dmd-latest
       - name: Fetch raster-d DUB dependencies
-        run: dub fetch mir-algorithm@3.22.4
+        run: |
+          dub fetch mir-core@1.7.4
+          dub fetch mir-algorithm@3.22.4
+          dub fetch silly@1.1.1
       - name: Run complete local research gate sequence
         run: ./check_all_research_gates.sh
