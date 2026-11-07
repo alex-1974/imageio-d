@@ -1,0 +1,7 @@
+name "imageio-d"
+description "General-purpose image I/O for D"
+license "MIT"
+targetType "library"
+sourcePaths "source"
+dependency "transport-d" path="../transport-d"
+dependency "compression-d" path="../../../compression-d"

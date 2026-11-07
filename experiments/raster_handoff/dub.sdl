@@ -1,0 +1,5 @@
+name "imageio-raster-handoff-probe"
+description "Research-only imageio-d to raster-d ownership handoff probe"
+targetType "executable"
+sourcePaths "source"
+dependency "raster-d" path="../../../raster-d"

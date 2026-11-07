@@ -1,0 +1,22 @@
+name "imageio-transport-consumer"
+description "Research-only imageio-d consumer of transport-d v0.1.0"
+targetType "executable"
+sourcePaths "source"
+dependency "transport-d" path="../../../transport-d"
+dependency "compression-d" path="../../../../../compression-d"
+importPaths "../compression_consumer/source" "../tiff_core/source"
+sourceFiles "../compression_consumer/source/deflate_bridge.d" \
+    "../compression_consumer/source/bigtiff_range_bridge.d" \
+    "../tiff_core/source/payload_decode.d" \
+    "../tiff_core/source/block_bridge.d" \
+    "../tiff_core/source/bigtiff_header.d"
+
+configuration "range" {
+    mainSourceFile "source/range_decode.d"
+    excludedSourceFiles "source/app.d"
+}
+
+configuration "http" {
+    mainSourceFile "source/http_app.d"
+    excludedSourceFiles "source/app.d" "source/range_decode.d"
+}

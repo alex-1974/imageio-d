@@ -7,6 +7,10 @@ __pycache__/
 *.so
 *.dll
 *.dylib
+*.a
+imageio-d-test-library
+imageio-*-consumer
+experiments/**/.build/
 /build/
 /data/
 /tmp/
