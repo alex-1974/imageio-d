@@ -6,10 +6,31 @@ struct Rational
     long numerator;
     ulong denominator = 1;
 
-    @property bool valid() const @safe pure nothrow
+    @property bool valid() const @safe pure nothrow @nogc
     {
         return denominator != 0;
     }
+}
+
+/** Return the exact reference-grid position of a stored plane sample.
+
+    `planeIndex` is an index in the returned plane storage. `origin` is the
+    plane's integer storage origin and `offset` is the crop phase recorded in
+    `ImagePlane.referenceOffsetX/Y`. The result is expressed in reference-grid
+    units. This is deliberately a technical coordinate helper; it performs no
+    rounding, resampling or colour interpretation.
+ */
+Rational sampleCenter(size_t origin, size_t planeIndex, uint spacing,
+    Rational offset) @safe pure nothrow @nogc
+{
+    if (!offset.valid || spacing == 0)
+        return Rational(0, 0);
+    // The public contract uses exact rationals. The bounded decoder paths
+    // currently produce offsets whose denominator is the spacing, so this
+    // common denominator preserves the value without floating-point loss.
+    const auto numerator = cast(long)(origin + planeIndex) * spacing
+        * offset.denominator + offset.numerator;
+    return Rational(numerator, offset.denominator);
 }
 
 /** Position of samples in a plane relative to the region reference grid.
@@ -306,4 +327,10 @@ unittest
         == [ubyte(10), 11]);
     assert(cropped.data[2 * cropped.rowStrideBytes + 1 .. 2 * cropped.rowStrideBytes + 3]
         == [ubyte(12), 13]);
+
+    auto center = sampleCenter(0, 0, 2, Rational(1, 2));
+    assert(center == Rational(1, 2));
+    center = sampleCenter(0, 1, 2, Rational(1, 2));
+    assert(center == Rational(5, 2));
+    assert(!sampleCenter(0, 0, 0, Rational(0, 1)).valid);
 }

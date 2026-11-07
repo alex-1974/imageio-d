@@ -4,6 +4,14 @@ This document is the local, evidence-backed status of GitHub issues 1–15.
 It does not close GitHub issues or admit a public package. A checked item has
 an executable probe or a documented implementation in this repository.
 
+Issue #18 is implemented in the current research branch: the public region
+contract exposes distinct geometry states and an exact `sampleCenter` helper;
+JPEG 4:2:0 and 4:2:2 public-region tests cover all four odd/even ROI-origin
+combinations, one-pixel and boundary-ending windows, invalid regions, plane
+origins, crop phases and metadata propagation. The
+decoder still intentionally reports unavailable JPEG phase when the source
+does not prove a siting convention.
+
 ## GeoTIFF/COG track
 
 | Issue | Status | Evidence / remaining boundary |
