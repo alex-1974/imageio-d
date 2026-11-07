@@ -5,7 +5,7 @@ import imageio.region : ImageRegion, ImageRegionInfo, ImagePlane, ImagePlaneInfo
     PixelLayout, SampleFormat, ComponentRole, SourceModel, MetadataState,
     SampleSignedness, SourceColorMetadata, ColorMatrix, ColorRange,
     TransferFunction, ColorPrimaries, ByteOrder,
-    Rational, unknownPhaseSampling;
+    Rational, unknownPhaseSampling, sampleCenter;
 import compression.deflate : InflateWorkspace;
 import compression.zlib : inflateZlib;
 import compression.packbits : decodePackBits;
@@ -1553,21 +1553,53 @@ unittest
         assert(decoded.region.planes[1].originX == 0
             && decoded.region.planes[1].originY == 0);
 
-        auto roi = decodeJpegRegion(encoded[0 .. written.written], 1, 1, 3, 2);
-        assert(roi.ok);
-        assert(roi.region.originX == 1 && roi.region.originY == 1);
-        assert(roi.region.info.width == 3 && roi.region.info.height == 2);
-        assert(roi.region.planes[0].originX == 1
-            && roi.region.planes[0].originY == 1);
-        assert(roi.region.planes[1].originX == 0
-            && roi.region.planes[1].originY
-                == (sampling == Sampling.s420 ? 0 : 1));
-        assert(roi.region.planes[1].referenceOffsetX.numerator == 1
-            && roi.region.planes[1].referenceOffsetX.denominator == 2);
-        assert(roi.region.planes[1].referenceOffsetY.numerator
-            == (sampling == Sampling.s420 ? 1 : 0));
-        assert(roi.region.planes[1].referenceOffsetY.denominator
-            == (sampling == Sampling.s420 ? 2 : 1));
-        assert(roi.region.planes[1].info.role == ComponentRole.chromaBlue);
+        foreach (oy; 0 .. 2)
+            foreach (ox; 0 .. 2)
+            {
+                auto roi = decodeJpegRegion(encoded[0 .. written.written], ox, oy,
+                    3, 2);
+                assert(roi.ok);
+                assert(roi.region.originX == ox && roi.region.originY == oy);
+                assert(roi.region.info.width == 3 && roi.region.info.height == 2);
+                assert(roi.region.planes[0].originX == ox
+                    && roi.region.planes[0].originY == oy);
+                auto chroma = roi.region.planes[1];
+                assert(chroma.info.role == ComponentRole.chromaBlue);
+                assert(chroma.referenceOffsetX.numerator == ox % 2
+                    && chroma.referenceOffsetX.denominator == 2);
+                assert(chroma.referenceOffsetY.numerator
+                    == (sampling == Sampling.s420 ? oy % 2 : 0));
+                assert(chroma.referenceOffsetY.denominator
+                    == (sampling == Sampling.s420 ? 2 : 1));
+                auto sx = sampleCenter(chroma.originX, 0,
+                    chroma.info.geometry.horizontalFactor,
+                    chroma.referenceOffsetX);
+                auto sy = sampleCenter(chroma.originY, 0,
+                    chroma.info.geometry.verticalFactor,
+                    chroma.referenceOffsetY);
+                assert(sx.valid && sy.valid);
+            }
+
+        // Boundary-ending and one-pixel windows must retain the same public
+        // origin/phase contract; these are the cases most likely to expose
+        // accidental floor-division or zero-sized plane handling.
+        foreach (xy; [[size_t(0), size_t(0)], [size_t(4), size_t(0)],
+            [size_t(0), size_t(2)], [size_t(4), size_t(2)]])
+        {
+            auto edge = decodeJpegRegion(encoded[0 .. written.written],
+                xy[0], xy[1], 1, 1);
+            assert(edge.ok);
+            assert(edge.region.info.width == 1 && edge.region.info.height == 1);
+            assert(edge.region.originX == xy[0] && edge.region.originY == xy[1]);
+            auto edgeChroma = edge.region.planes[1];
+            assert(edgeChroma.width >= 1 && edgeChroma.height >= 1);
+            assert(edgeChroma.referenceOffsetX.numerator == xy[0] % 2);
+            assert(edgeChroma.referenceOffsetY.numerator
+                == (sampling == Sampling.s420 ? xy[1] % 2 : 0));
+        }
+
+        auto invalid = decodeJpegRegion(encoded[0 .. written.written],
+            width, 0, 1, 1);
+        assert(!invalid.ok && invalid.error == TiffDecodeError.invalidRegion);
     }
 }

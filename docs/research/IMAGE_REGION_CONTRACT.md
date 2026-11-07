@@ -32,6 +32,17 @@ must be `known` before a consumer treats the source phase as usable;
 `unavailable`, `unsupported`, `conflicting` and `invalid` are explicit
 non-interpretable states.
 
+The public `sampleCenter(origin, index, spacing, offset)` helper evaluates
+the same equation without floating-point rounding:
+
+```text
+referencePosition = (origin + index) * spacing + offset
+```
+
+It returns an invalid rational for zero spacing or an invalid offset. The
+helper reports coordinates only; it never chooses a siting convention or
+performs resampling.
+
 ## Layout
 
 `ImageRegionInfo` describes the byte layout explicitly:
