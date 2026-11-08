@@ -19,6 +19,7 @@ int main(string[] args)
         auto result = writeJpeg(sink, JpegWriteInfo(width, height, components),
             input[], width * components, 75, Sampling.s444,
             ImageWriteOptions(MetadataPolicy.rejectLoss, 16 * 1024 * 1024));
+        sink.close();
         return result.complete ? 0 : 1;
     }
     if (args[1] == "decode")

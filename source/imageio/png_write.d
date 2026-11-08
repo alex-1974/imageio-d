@@ -82,7 +82,11 @@ ImageWriteResult writePng(ByteSink sink, PngWriteInfo info,
         + rowBytes > source.length)
         return ImageWriteResult(ImageWriteError.truncatedInput);
     const filteredBytes = cast(size_t)info.height * (rowBytes + 1);
-    const zlibCapacity = zlibStoredSize(filteredBytes);
+    // The released fixed-LZ encoder may need more space than the stored-block
+    // upper bound for incompressible rows; keep the full result bounded while
+    // avoiding a false complete result with a truncated IDAT stream.
+    const zlibCapacity = filteredBytes > (size_t.max - 64) / 2
+        ? size_t.max : filteredBytes * 2 + 64;
     if (zlibCapacity > options.maximumOutputBytes || zlibCapacity > uint.max - 57)
         return ImageWriteResult(ImageWriteError.outputLimitExceeded);
     auto filtered = new ubyte[](filteredBytes);
