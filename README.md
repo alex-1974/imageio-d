@@ -1,8 +1,9 @@
 # imageio-d — Image I/O research
 
-**Status: research only — release intentionally postponed.**
+**Status: 0.1.0 release candidate — publication pending final sign-off.**
 
-No preview or partial release will be published. A release requires qualified
+No preview or partial release will be published. The 0.1.0 release has a
+declared supported subset and requires qualified
 read/write support for TIFF, JPEG and PNG, including their declared metadata,
 failure, ownership and consumer contracts. Research probes do not count as
 release support.
@@ -13,13 +14,12 @@ already-decoded numeric raster/image processing. Investigate existing D
 libraries first; implement only when a consumer-driven experiment shows a
 capability gap and the repository's admission gate is satisfied.
 
-The current branch contains an unreleased, research-backed DUB package and
+The current branch contains the 0.1.0 release candidate and its research-backed DUB package.
 public API probes. The qualified research slice includes bounded TIFF ROI
 decoding and explicit TIFF writers for UInt8/UInt16 strips/tiles, classic and
 BigTIFF, Deflate, PackBits, LZW and baseline JPEG-in-TIFF, plus independent
-JPEG and PNG read/write paths. It is not yet a supported release: the public
-variant, metadata, ownership and performance contracts still require final
-release audit and documentation reconciliation.
+JPEG and PNG read/write paths. Unsupported variants remain explicit; no
+implicit colour or CRS semantics are applied.
 
 The current consumer flow is:
 
