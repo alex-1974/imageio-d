@@ -28,6 +28,8 @@ jobs:
           compiler: ldc-latest
       - name: Run imageio checks
         run: ./check.sh
+      - name: Build DDOX documentation
+        run: ./check_docs.sh
 
   ldc:
     runs-on: ubuntu-latest

@@ -13,7 +13,7 @@ promise a complete TIFF implementation.
 
 ## Proven
 
-- [x] transport-d v0.1.1 bounded range source
+- [x] transport-d v0.2.1 bounded range source
 - [x] compression-d zlib Deflate integration
 - [x] classic TIFF magic-number detection
 - [x] classic TIFF IFD inspection
@@ -49,7 +49,7 @@ the compression algorithms and reusable decompression primitives remain in
 - [ ] freeze structured error propagation
 - [ ] qualify malformed and truncated inputs through the public API
 - [ ] publish the complete range/overview cost report contract
-- [ ] run the complete CI matrix from clean checkouts
+- [x] run the complete CI matrix from clean checkouts
 - [ ] review public Ddoc and dependency versions
 - [ ] make an explicit first-release scope decision
 

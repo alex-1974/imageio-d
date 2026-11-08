@@ -1,3 +1,10 @@
+/**
+ * Bounded TIFF inspection, planning and research decoder entry points.
+ *
+ * The implemented subset is intentionally explicit and incomplete. Callers
+ * must inspect the returned error/capability state before using decoded data;
+ * no implicit colour or geospatial semantics are applied.
+ */
 module imageio.tiff;
 
 import transport : ByteRange, ByteSource, ReadError, ReadLimits, ReadResult;

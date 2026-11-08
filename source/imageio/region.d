@@ -1,3 +1,10 @@
+/**
+ * Neutral decoded-region and component-plane contracts.
+ *
+ * These types report technical storage, sampling and source metadata. They do
+ * not perform colour conversion, resampling, NoData interpretation or raster
+ * ownership integration.
+ */
 module imageio.region;
 
 /** An exact rational value used for format-defined sample positions. */
