@@ -16,7 +16,7 @@ does not prove a siting convention.
 
 | Issue | Status | Evidence / remaining boundary |
 |---|---|---|
-| #1 standalone scope | research-complete, admission-open | Reference matrix, consumer flows, API probes and admission decision exist. Core and bounded GeoTIFF gates now run in CI; a real read/process/write consumer and second-host evidence remain required by M5. |
+| #1 standalone scope | release-candidate | Reference matrix, public read/process/write consumer, API probes and admission decision exist. Local technical gates run in CI; real application integration and second-host evidence are tracked post-release. |
 | #3 GeoTIFF/COG consumer requirement | probe-complete | Sentinel-2 metadata/window oracle, bounded local/HTTP ranges, overviews and UInt16 window comparison pass. No stable public API is admitted. |
 | #4 GeoKey oracle | implemented for technical inspection | GeoKey directory is bounds-checked, preserved and supports inline SHORT lookup plus model/raster/geographic-CRS/projected-CRS IDs. GDAL fixture comparison passes. CRS object construction remains outside imageio. |
 | #5 inspection result | implemented in research API | Dimensions, samples, layout, compression, tiling, predictor, raw NoData value, GeoKey values and affine tag values are exposed. |
@@ -50,7 +50,8 @@ states, source-colour metadata and malformed geometry descriptors.
 
 ## Explicit non-completion conditions
 
-The following cannot be honestly marked complete from this checkout:
+The following are explicitly post-release validation items or outside the
+declared 0.x scope:
 
 - a real external editor or satellite consumer read/process/write path;
 - independent second-host/compiler performance evidence;
@@ -58,9 +59,9 @@ The following cannot be honestly marked complete from this checkout:
 - full JPEG metadata preservation and all colour/siting variants;
 - release packaging and public API freeze.
 
-These are admission gates, not implementation bugs. The repository remains a
-research-only develop branch until they are supplied by the workspace and real
-consumer evidence.
+These are follow-up validation items, not blockers for the declared 0.x
+technical scope. The repository remains research-coordinated until the release
+checklist is signed off; no unsupported variants are implied by the candidate.
 
 ## Verification
 

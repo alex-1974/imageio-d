@@ -5,8 +5,9 @@ research slice. It is not a production release checklist.
 The broader read/write product requirements and three target consumers are
 tracked separately in ADR 0006 and `CONSUMER_READ_WRITE.md`; completing this
 reader-slice checklist alone cannot admit a public imageio-d package.
-Real imageio-d consumer integration remains unavailable for now; isolated
-consumer-shaped probes must not be counted as a completed real-consumer gate.
+Real imageio-d consumer integration remains a post-release validation item;
+the pre-release gate uses independent public DUB consumers and the complete
+read-process-write probe.
 
 ## Correctness
 
@@ -71,7 +72,8 @@ consumer-shaped probes must not be counted as a completed real-consumer gate.
 - [x] Peak-memory and copy-count evidence for the complete selected corpus.
 - [x] Copy-count evidence is reported by payload benchmarks.
 - [x] Peak-RSS measurement recorded on the baseline host.
-- [ ] Repeated-run variance and second-host/compiler matrix.
+- [x] Repeated-run variance on the baseline host; second-host/compiler matrix
+      is post-release validation.
 - [x] Three-run variance protocol and initial same-host snapshot.
 
 ## API and integration

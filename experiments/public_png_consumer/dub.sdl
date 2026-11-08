@@ -1,0 +1,5 @@
+name "imageio-public-png-consumer"
+targetType "executable"
+dependency "imageio-d" path="../.."
+dependency "transport-d" path="../../../transport-d"
+sourcePaths "source"
