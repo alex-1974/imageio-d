@@ -12,3 +12,4 @@ public import imageio.io;
 public import imageio.tiff;
 public import imageio.tiff_write;
 public import imageio.png_write;
+public import imageio.png_read;

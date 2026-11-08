@@ -23,6 +23,27 @@ enum ImageWriteError : ubyte
     outputLimitExceeded
 }
 
+enum ImageReadError : ubyte
+{
+    none,
+    unsupportedFormat,
+    malformedInput,
+    truncatedInput,
+    checksumFailure,
+    unsupportedRepresentation,
+    sizeLimit,
+    sourceFailure,
+    codecFailure
+}
+
+struct ImageReadResult
+{
+    ImageReadError error = ImageReadError.none;
+    size_t bytesProduced;
+    @property bool complete() const @safe pure nothrow @nogc
+    { return error == ImageReadError.none; }
+}
+
 /** Explicit policy for metadata that cannot be represented by the target. */
 enum MetadataPolicy : ubyte
 {
