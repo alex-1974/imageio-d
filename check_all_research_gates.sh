@@ -20,5 +20,6 @@ run_gate 'JPEG gate' experiments/jpeg_gate/check.sh
 run_gate 'PNG read/write gate' experiments/png_rw/check.sh
 run_gate 'raster handoff' experiments/raster_handoff/check.sh
 run_gate 'public TIFF consumer' experiments/public_tiff_consumer/check.sh
+run_gate 'public TIFF write consumer' experiments/public_tiff_write_consumer/check.sh
 
 echo 'all local research gates passed'

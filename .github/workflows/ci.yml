@@ -105,3 +105,5 @@ jobs:
         run: ./check_all_research_gates.sh
       - name: Verify clean package archive consumer
         run: ./check_package_consumer.sh
+      - name: Run public TIFF write consumer
+        run: experiments/public_tiff_write_consumer/check.sh
