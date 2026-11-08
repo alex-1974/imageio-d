@@ -15,6 +15,7 @@ public import imageio.tiff_big_write;
 public import imageio.tiff_tile_write;
 public import imageio.tiff_deflate_write;
 public import imageio.tiff_packbits_write;
+public import imageio.tiff_lzw_write;
 public import imageio.png_write;
 public import imageio.png_read;
 public import imageio.jpeg_io;

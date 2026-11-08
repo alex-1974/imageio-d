@@ -56,6 +56,14 @@ for compiler in dmd ldc2; do
         "$build/tile-packbits-$compiler.tif" "$build/decoded-packbits-$compiler"
     cmp "$build/input.raw" "$build/decoded-packbits-$compiler"
     "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
+        "$build/input.raw" "$build/tile-lzw-$compiler.tif" tile-lzw
+    lzwReport=$(gdalinfo "$build/tile-lzw-$compiler.tif")
+    echo "$lzwReport" | grep -F "Size is 19, 11" >/dev/null
+    echo "$lzwReport" | grep -F "Type=UInt16" >/dev/null
+    gdal_translate -q -of ENVI -ot UInt16 -co INTERLEAVE=BIP \
+        "$build/tile-lzw-$compiler.tif" "$build/decoded-lzw-$compiler"
+    cmp "$build/input.raw" "$build/decoded-lzw-$compiler"
+    "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
         "$build/input.raw" "$build/big-metadata-$compiler.tif" big-metadata
     bigMetadataReport=$(gdalinfo "$build/big-metadata-$compiler.tif")
     echo "$bigMetadataReport" | grep -F "NoData Value=-9999" >/dev/null

@@ -2,7 +2,7 @@ import std.file : read;
 import std.conv : to;
 import imageio : TiffWriteInfo, TiffWriteMetadata, writeClassicTiff,
     writeBigTiff, TiffTileWriteInfo, writeBigTiffTiles, ImageWriteOptions;
-import imageio : writeBigTiffDeflateTiles, writeBigTiffPackBitsTiles;
+import imageio : writeBigTiffDeflateTiles, writeBigTiffPackBitsTiles, writeBigTiffLzwTiles;
 import transport : FileSink;
 
 int main(string[] args)
@@ -25,6 +25,9 @@ int main(string[] args)
             channels, sampleBytes), pixels[], width * channels * sampleBytes)
         : args[7] == "tile-packbits"
         ? writeBigTiffPackBitsTiles(sink, TiffTileWriteInfo(width, height, 16, 16,
+            channels, sampleBytes), pixels[], width * channels * sampleBytes)
+        : args[7] == "tile-lzw"
+        ? writeBigTiffLzwTiles(sink, TiffTileWriteInfo(width, height, 16, 16,
             channels, sampleBytes), pixels[], width * channels * sampleBytes)
         : args[7] == "big"
         ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes)
