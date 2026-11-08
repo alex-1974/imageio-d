@@ -1,7 +1,7 @@
 import std.file : read;
 import std.conv : to;
 import imageio : TiffWriteInfo, TiffWriteMetadata, writeClassicTiff,
-    writeBigTiff, ImageWriteOptions;
+    writeBigTiff, TiffTileWriteInfo, writeBigTiffTiles, ImageWriteOptions;
 import transport : FileSink;
 
 int main(string[] args)
@@ -16,7 +16,10 @@ int main(string[] args)
     auto sink = new FileSink(args[6]);
     immutable ushort[4] geoKeys = [1, 1, 0, 0];
     auto info = TiffWriteInfo(width, height, channels, sampleBytes, 5);
-    auto result = args[7] == "big"
+    auto result = args[7] == "tile"
+        ? writeBigTiffTiles(sink, TiffTileWriteInfo(width, height, 16, 16,
+            channels, sampleBytes), pixels[], width * channels * sampleBytes)
+        : args[7] == "big"
         ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes)
         : args[7] == "big-metadata"
             ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes,
