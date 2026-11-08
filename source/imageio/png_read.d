@@ -17,6 +17,24 @@ struct PngReadInfo
     uint paletteEntries;
 }
 
+/** A tEXt payload range borrowed from the inspected PNG bytes. */
+struct PngTextChunk
+{
+    size_t keywordOffset;
+    size_t keywordLength;
+    size_t valueOffset;
+    size_t valueLength;
+}
+
+struct PngMetadataInfo
+{
+    ImageReadError error = ImageReadError.none;
+    size_t textChunks;
+
+    @property bool complete() const @safe pure nothrow @nogc
+    { return error == ImageReadError.none; }
+}
+
 private uint be32(scope const(ubyte)[] b, size_t p) @safe pure nothrow @nogc
 { return (cast(uint)b[p] << 24) | (cast(uint)b[p + 1] << 16)
     | (cast(uint)b[p + 2] << 8) | b[p + 3]; }
@@ -56,6 +74,46 @@ private bool unfilterRow(scope ubyte[] row, scope const(ubyte)[] previous, size_
         }
     }
     return true;
+}
+
+/** Inspect PNG tEXt chunks without interpreting their values.
+ *
+ * Returned ranges borrow file and remain valid only while the caller retains
+ * that input buffer. No colour, locale or application semantics are applied.
+ */
+PngMetadataInfo inspectPngMetadata(scope const(ubyte)[] file,
+    scope PngTextChunk[] textChunks) @safe pure nothrow @nogc
+{
+    static immutable ubyte[8] sig = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (file.length < 8 || file[0 .. 8] != sig[])
+        return PngMetadataInfo(ImageReadError.unsupportedFormat);
+    size_t count;
+    for (size_t p = 8; p < file.length;)
+    {
+        if (file.length - p < 12)
+            return PngMetadataInfo(ImageReadError.truncatedInput, count);
+        const length = cast(size_t)be32(file, p);
+        if (length > file.length - p - 12)
+            return PngMetadataInfo(ImageReadError.truncatedInput, count);
+        const end = p + 12 + length;
+        const type = file[p + 4 .. p + 8];
+        if (crc32(file[p + 4 .. p + 8 + length]) != be32(file, p + 8 + length))
+            return PngMetadataInfo(ImageReadError.checksumFailure, count);
+        if (type == cast(const(ubyte)[])"tEXt")
+        {
+            size_t separator;
+            while (separator < length && file[p + 8 + separator] != 0) ++separator;
+            if (separator == 0 || separator == length)
+                return PngMetadataInfo(ImageReadError.malformedInput, count);
+            if (count == textChunks.length)
+                return PngMetadataInfo(ImageReadError.sizeLimit, count);
+            textChunks[count++] = PngTextChunk(
+                p + 8, separator, p + 8 + separator + 1,
+                length - separator - 1);
+        }
+        p = end;
+    }
+    return PngMetadataInfo(ImageReadError.none, count);
 }
 
 /** Inspect and decode a non-interlaced PNG into caller-owned pixel storage. */
@@ -155,5 +213,25 @@ version (unittest)
         auto read = readPng(sink.data, decoded[], 6, workspace);
         assert(read.complete && read.bytesProduced == decoded.length);
         assert(decoded[] == source[]);
+    }
+
+    @safe unittest
+    {
+        import imageio.png_write : PngWriteInfo, writePng;
+        import imageio.io : ImageWriteOptions, MetadataPolicy;
+        import transport : MemorySink;
+        ubyte[3] source = [255, 0, 0];
+        auto sink = new MemorySink();
+        auto written = writePng(sink,
+            PngWriteInfo(1, 1, 8, 2, false, null,
+                cast(const(ubyte)[])"Author", cast(const(ubyte)[])"imageio-d"),
+            source[], 3, ImageWriteOptions(MetadataPolicy.allowLoss, 4096));
+        assert(written.complete);
+        PngTextChunk[1] chunks;
+        auto metadata = inspectPngMetadata(sink.data, chunks[]);
+        assert(metadata.complete && metadata.textChunks == 1);
+        assert(sink.data[chunks[0].keywordOffset
+            .. chunks[0].keywordOffset + chunks[0].keywordLength]
+            == cast(const(ubyte)[])"Author");
     }
 }
