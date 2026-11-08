@@ -16,7 +16,7 @@ int main(string[] args)
     auto sink = new FileSink(args[6]);
     immutable ushort[4] geoKeys = [1, 1, 0, 0];
     auto result = writeClassicTiff(sink,
-        TiffWriteInfo(width, height, channels, sampleBytes),
+        TiffWriteInfo(width, height, channels, sampleBytes, 5),
         pixels[], width * channels * sampleBytes,
         ImageWriteOptions.init,
         args[7] == "metadata"

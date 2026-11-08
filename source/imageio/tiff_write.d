@@ -12,7 +12,14 @@ import transport : ByteSink;
 import imageio.io : ImageWriteError, ImageWriteOptions, ImageWriteResult,
     MetadataDisposition, mapSinkFailure;
 
-struct TiffWriteInfo { uint width; uint height; ubyte channels; ubyte sampleBytes; }
+struct TiffWriteInfo
+{
+    uint width;
+    uint height;
+    ubyte channels;
+    ubyte sampleBytes;
+    uint rowsPerStrip;
+}
 
 /** Raw technical TIFF metadata; values are copied without CRS interpretation. */
 struct TiffWriteMetadata
@@ -29,6 +36,9 @@ struct TiffWriteRequirements
     size_t pixelOffset;
     size_t noDataOffset;
     size_t geoKeyOffset;
+    size_t stripOffsetsOffset;
+    size_t stripCountsOffset;
+    uint stripCount;
     @property bool valid() const @safe pure nothrow @nogc
     { return error == ImageWriteError.none; }
 }
@@ -52,26 +62,34 @@ TiffWriteRequirements tiffWriteRequirements(TiffWriteInfo info,
     if (info.width > size_t.max / pixelBytes)
         return TiffWriteRequirements(ImageWriteError.outputLimitExceeded);
     const rowBytes = cast(size_t)info.width * pixelBytes;
+    const rowsPerStrip = info.rowsPerStrip == 0 ? info.height : info.rowsPerStrip;
+    if (rowsPerStrip == 0 || rowsPerStrip > info.height)
+        return TiffWriteRequirements(ImageWriteError.unsupportedRepresentation);
+    const stripCount = (info.height + rowsPerStrip - 1) / rowsPerStrip;
     const baseEntries = info.channels == 2 || info.channels == 4 ? 11U : 10U;
     const entries = baseEntries + (metadata.noDataAscii.length != 0 ? 1U : 0U)
         + (metadata.geoKeyDirectory.length != 0 ? 1U : 0U);
     const ifdEnd = 8 + 2 + entries * 12 + 4;
     const bitsBytes = info.channels > 2 ? info.channels * 2U : 0U;
+    const stripOffsetsOffset = ifdEnd + bitsBytes;
+    const stripCountsOffset = stripOffsetsOffset + stripCount * 4;
     const noDataOffset = metadata.noDataAscii.length != 0
-        ? ifdEnd + bitsBytes : 0;
+        ? stripCountsOffset + stripCount * 4 : 0;
     const geoKeyOffset = noDataOffset != 0
         ? noDataOffset + metadata.noDataAscii.length + 1
-        : metadata.geoKeyDirectory.length != 0 ? ifdEnd + bitsBytes : 0;
+        : metadata.geoKeyDirectory.length != 0
+            ? stripCountsOffset + stripCount * 4 : 0;
     const metadataBytes = (metadata.noDataAscii.length != 0
         ? metadata.noDataAscii.length + 1 : 0)
         + (metadata.geoKeyDirectory.length * 2);
-    const pixelOffset = ifdEnd + bitsBytes + metadataBytes;
+    const pixelOffset = stripCountsOffset + stripCount * 4 + metadataBytes;
     const pixelTotal = cast(size_t)info.height * rowBytes;
     if (pixelOffset > size_t.max - pixelTotal
         || pixelOffset + pixelTotal > uint.max)
         return TiffWriteRequirements(ImageWriteError.outputLimitExceeded);
     return TiffWriteRequirements(ImageWriteError.none, rowBytes,
-        pixelOffset + pixelTotal, pixelOffset, noDataOffset, geoKeyOffset);
+        pixelOffset + pixelTotal, pixelOffset, noDataOffset, geoKeyOffset,
+        stripOffsetsOffset, stripCountsOffset, stripCount);
 }
 
 private void entry(scope ubyte[] output, ref size_t p, ushort tag, ushort kind,
@@ -100,9 +118,15 @@ private void encodeClassicTiff(TiffWriteInfo info, TiffWriteMetadata metadata,
         : cast(uint)bitsOffset);
     entry(output, p, 259, 3, 1, 1);
     entry(output, p, 262, 3, 1, info.channels <= 2 ? 1U : 2U);
-    entry(output, p, 273, 4, 1, cast(uint)req.pixelOffset);
-    entry(output, p, 277, 3, 1, info.channels); entry(output, p, 278, 4, 1, info.height);
-    entry(output, p, 279, 4, 1, cast(uint)(req.rowBytes * info.height));
+    entry(output, p, 273, 4, req.stripCount,
+        req.stripCount == 1 ? cast(uint)req.pixelOffset
+            : cast(uint)req.stripOffsetsOffset);
+    const rowsPerStrip = info.rowsPerStrip == 0 ? info.height : info.rowsPerStrip;
+    entry(output, p, 277, 3, 1, info.channels);
+    entry(output, p, 278, 4, 1, rowsPerStrip);
+    entry(output, p, 279, 4, req.stripCount,
+        req.stripCount == 1 ? cast(uint)(req.rowBytes * info.height)
+            : cast(uint)req.stripCountsOffset);
     entry(output, p, 284, 3, 1, 1);
     if (info.channels == 2 || info.channels == 4)
         entry(output, p, 338, 3, 1, 2);
@@ -113,6 +137,16 @@ private void encodeClassicTiff(TiffWriteInfo info, TiffWriteMetadata metadata,
         entry(output, p, 42113, 2, cast(uint)(metadata.noDataAscii.length + 1),
             cast(uint)req.noDataOffset);
     put32(output, p, 0);
+    foreach (uint strip; 0 .. req.stripCount)
+    {
+        const firstRow = cast(size_t)strip * rowsPerStrip;
+        const rows = (firstRow + rowsPerStrip > info.height)
+            ? info.height - firstRow : rowsPerStrip;
+        put32(output, req.stripOffsetsOffset + strip * 4,
+            cast(uint)(req.pixelOffset + firstRow * req.rowBytes));
+        put32(output, req.stripCountsOffset + strip * 4,
+            cast(uint)(rows * req.rowBytes));
+    }
     if (info.channels > 2)
         foreach (size_t i; 0 .. info.channels) put16(output, bitsOffset + i * 2, cast(ushort)bits);
     if (metadata.noDataAscii.length != 0)
