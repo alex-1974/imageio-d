@@ -4,7 +4,7 @@ module imageio.tiff_big_write;
 import transport : ByteSink;
 import imageio.io : ImageWriteError, ImageWriteOptions, ImageWriteResult,
     MetadataDisposition, mapSinkFailure;
-import imageio.tiff_write : TiffWriteInfo;
+import imageio.tiff_write : TiffWriteInfo, TiffWriteMetadata;
 
 private void put16(scope ubyte[] b, size_t p, ushort v)
 @safe pure nothrow @nogc
@@ -26,7 +26,8 @@ private void entry(scope ubyte[] b, ref size_t p, ushort tag, ushort type,
 /** Write a little-endian BigTIFF with uncompressed chunky strips. */
 ImageWriteResult writeBigTiff(ByteSink sink, TiffWriteInfo info,
     scope const(ubyte)[] source, size_t rowStride,
-    ImageWriteOptions options = ImageWriteOptions.init) @safe
+    ImageWriteOptions options = ImageWriteOptions.init,
+    TiffWriteMetadata metadata = TiffWriteMetadata.init) @safe
 {
     if (info.width == 0 || info.height == 0 || info.channels < 1
         || info.channels > 4 || (info.sampleBytes != 1 && info.sampleBytes != 2))
@@ -34,12 +35,16 @@ ImageWriteResult writeBigTiff(ByteSink sink, TiffWriteInfo info,
     const rowsPerStrip = info.rowsPerStrip == 0 ? info.height : info.rowsPerStrip;
     if (rowsPerStrip == 0 || rowsPerStrip > info.height)
         return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
+    if (metadata.noDataAscii.length > 7 || metadata.geoKeyDirectory.length > 4)
+        return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
     const rowBytes = cast(size_t)info.width * info.channels * info.sampleBytes;
     if (rowStride < rowBytes || cast(size_t)(info.height - 1) * rowStride
         + rowBytes > source.length)
         return ImageWriteResult(ImageWriteError.truncatedInput);
     const strips = (info.height + rowsPerStrip - 1) / rowsPerStrip;
-    const entries = info.channels == 2 || info.channels == 4 ? 11U : 10U;
+    const entries = (info.channels == 2 || info.channels == 4 ? 11U : 10U)
+        + (metadata.geoKeyDirectory.length != 0 ? 1U : 0U)
+        + (metadata.noDataAscii.length != 0 ? 1U : 0U);
     const ifdEnd = 16 + 8 + entries * 20 + 8;
     const bitsBytes = 0U; // up to four SHORT values fit BigTIFF's 8-byte value field
     const offsetsTable = ifdEnd + bitsBytes;
@@ -69,7 +74,18 @@ ImageWriteResult writeBigTiff(ByteSink sink, TiffWriteInfo info,
     entry(output, p, 279, 16, strips,
         strips == 1 ? cast(ulong)rowBytes * info.height : countsTable);
     entry(output, p, 284, 3, 1, 1);
-    if (entries == 11) entry(output, p, 338, 3, 1, 2);
+    if (info.channels == 2 || info.channels == 4)
+        entry(output, p, 338, 3, 1, 2);
+    ulong geoValue;
+    foreach (size_t i; 0 .. metadata.geoKeyDirectory.length)
+        geoValue |= cast(ulong)metadata.geoKeyDirectory[i] << (i * 16);
+    if (metadata.geoKeyDirectory.length != 0)
+        entry(output, p, 34735, 3, metadata.geoKeyDirectory.length, geoValue);
+    ulong noDataValue;
+    foreach (size_t i; 0 .. metadata.noDataAscii.length)
+        noDataValue |= cast(ulong)metadata.noDataAscii[i] << (i * 8);
+    if (metadata.noDataAscii.length != 0)
+        entry(output, p, 42113, 2, metadata.noDataAscii.length + 1, noDataValue);
     put64(output, p, 0);
     foreach (ulong strip; 0 .. strips)
     {
@@ -89,6 +105,9 @@ ImageWriteResult writeBigTiff(ByteSink sink, TiffWriteInfo info,
     if (written.value().bytesWritten != output.length)
         return ImageWriteResult(ImageWriteError.sinkFailure,
             written.value().bytesWritten);
+    const hasMetadata = metadata.noDataAscii.length != 0
+        || metadata.geoKeyDirectory.length != 0;
     return ImageWriteResult(ImageWriteError.none, output.length,
-        MetadataDisposition.notApplicable);
+        hasMetadata ? MetadataDisposition.preserved
+            : MetadataDisposition.notApplicable);
 }

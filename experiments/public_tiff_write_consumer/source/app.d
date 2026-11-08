@@ -18,6 +18,10 @@ int main(string[] args)
     auto info = TiffWriteInfo(width, height, channels, sampleBytes, 5);
     auto result = args[7] == "big"
         ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes)
+        : args[7] == "big-metadata"
+            ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes,
+                ImageWriteOptions.init,
+                TiffWriteMetadata(cast(const(ubyte)[])"-9999", geoKeys[]))
         : writeClassicTiff(sink, info, pixels[], width * channels * sampleBytes,
             ImageWriteOptions.init,
             args[7] == "metadata"

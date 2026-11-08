@@ -34,5 +34,9 @@ for compiler in dmd ldc2; do
     bigReport=$(gdalinfo "$build/big-$compiler.tif")
     echo "$bigReport" | grep -F "Size is 19, 11" >/dev/null
     echo "$bigReport" | grep -F "Type=UInt16" >/dev/null
+    "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
+        "$build/input.raw" "$build/big-metadata-$compiler.tif" big-metadata
+    bigMetadataReport=$(gdalinfo "$build/big-metadata-$compiler.tif")
+    echo "$bigMetadataReport" | grep -F "NoData Value=-9999" >/dev/null
 done
 echo 'public TIFF write consumer passed under DMD/LDC'
