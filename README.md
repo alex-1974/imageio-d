@@ -2,6 +2,11 @@
 
 **Status: research only — no production package/API admitted.**
 
+The intended first publication is a deliberately limited `0.1.0-preview`
+read-only package. It publishes the bounded TIFF/GeoTIFF/COG research
+capability with its known limitations explicitly documented; it is not a
+complete image library or a promise of support for every TIFF variant.
+
 Research whether an independent Pure-D image I/O library provides a
 coherent read/write boundary between encoded image formats/transport and
 already-decoded numeric raster/image processing. Investigate existing D
@@ -24,6 +29,20 @@ auto level = selectLevel(levels.levels, width, height);
 auto plan = planRegion(source, x, y, width, height);
 auto pixels = decodeRegion(source, x, y, width, height);
 ```
+
+## Preview scope and known limitations
+
+The planned preview scope is classic TIFF/BigTIFF and bounded GeoTIFF/COG
+reads for the qualified UInt8/UInt16 strip/tile and compression subsets. It
+returns technical `ImageRegion` data and preserves native samples where the
+declared subset supports them.
+
+The preview deliberately does not provide PNG/JPEG as general formats,
+complete TIFF variant coverage, implicit RGB(A) or radiometric conversion,
+CRS objects, reprojection, resampling, or NoData interpretation. Ownership and
+failure wording, metadata transfer, range/overview cost reporting and broader
+consumer validation remain documented follow-up work. These are preview
+limitations, not silently supported behaviour.
 
 Format detection uses the content signature. File extensions and HTTP content
 types are hints only. The decoder returns technical `ImageRegion` data; it

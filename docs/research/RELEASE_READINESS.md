@@ -1,6 +1,10 @@
 # imageio-d release readiness
 
-Status: unreleased research-backed develop API.
+Status: release-preparation for a deliberately limited `0.1.0-preview`.
+
+The preview may ship with the open items below when they are stated as
+limitations in the README, Ddoc and changelog. They remain blockers for a
+stable support promise, not for this bounded preview.
 
 ## Proposed first release scope
 
@@ -43,15 +47,23 @@ the compression algorithms and reusable decompression primitives remain in
 - [ ] implicit RGB(A) or radiometric conversion
 - [ ] CRS/georeferencing interpretation
 
-## Admission blockers
+## Preview release gates
 
-- [ ] freeze ImageRegion ownership and lifetime wording
-- [ ] freeze structured error propagation
-- [ ] qualify malformed and truncated inputs through the public API
+- [x] explicit read-only TIFF/GeoTIFF/COG scope and unsupported list
+- [x] README, changelog and module-level Ddoc describe the preview boundary
+- [x] DMD/LDC and rendered DDox checks pass from a clean dependency graph
+- [ ] clean external consumer loads the package from its DUB release graph
+- [ ] package archive and licence contents are verified
+
+## Deferred limitations
+
+- [ ] freeze ImageRegion ownership and lifetime wording for a stable API
+- [ ] freeze structured error propagation for a stable API
+- [ ] broaden malformed and truncated input coverage through every public path
 - [ ] publish the complete range/overview cost report contract
 - [x] run the complete CI matrix from clean checkouts
-- [ ] review public Ddoc and dependency versions
-- [ ] make an explicit first-release scope decision
+- [x] review public Ddoc and dependency versions for the preview
+- [x] make an explicit bounded preview-scope decision
 
-The current implementation must not be presented as a complete TIFF or image
-library until the admission blockers are resolved.
+The preview must not be presented as a complete TIFF or image library. The
+deferred items remain release notes and follow-up gates, not implied support.
