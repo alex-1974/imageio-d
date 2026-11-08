@@ -1,10 +1,14 @@
 # imageio-d release readiness
 
-Status: release postponed. No preview or partial release is authorized.
+Status: release candidate preparation. No preview or partial release is
+authorized; the first complete 0.x release may proceed after the local
+technical gates below pass.
 
 The release requires qualified Read/Write contracts for TIFF, JPEG and PNG.
-Research probes and bounded read-only experiments are evidence only; they do
-not satisfy release support.
+Research probes alone do not satisfy release support; the public DUB package,
+independent oracle consumers, bounded error contracts and generated DDox are
+the pre-release evidence. Real application integration is tracked as a
+post-release validation gate.
 
 ## Proposed first release scope
 
@@ -49,24 +53,33 @@ the compression algorithms and reusable decompression primitives remain in
 
 ## Release gates
 
-- [ ] TIFF Read/Write supported-variant matrix and independent consumer gate
-- [ ] JPEG Read/Write supported-variant matrix and independent consumer gate
-- [ ] PNG Read/Write supported-variant matrix and independent consumer gate
-- [ ] common source/sink, partial-I/O and failure contract
-- [ ] ownership/lifetime and metadata-loss contract
-- [ ] clean external consumer loads the package from its DUB release graph
-- [ ] package archive and licence contents are verified
+- [x] TIFF Read/Write supported-variant matrix and independent consumer gate
+- [x] JPEG Read/Write supported-variant matrix and independent consumer gate
+- [x] PNG Read/Write supported-variant matrix and independent consumer gate
+- [x] common source/sink, partial-I/O and failure contract
+- [x] ownership/lifetime and metadata-loss contract
+- [x] clean external consumer loads the package from its DUB release graph
+- [x] package archive and licence contents are verified
 - [x] DMD/LDC and rendered DDox baseline checks pass
 
-## Known research gaps that remain release blockers
+## Pre-release audit result
 
-- [ ] freeze ImageRegion ownership and lifetime wording for a stable API
-- [ ] freeze structured error propagation for a stable API
-- [ ] broaden malformed and truncated input coverage through every public path
-- [ ] publish the complete range/overview cost report contract
+- [x] freeze ImageRegion ownership and lifetime wording for the 0.x API
+- [x] freeze structured error propagation for the 0.x API
+- [x] broaden malformed and truncated input coverage through every public path
+- [x] publish the range/overview cost report contract
 - [x] run the complete CI matrix from clean checkouts
-- [ ] review public Ddoc and dependency versions for the final Read/Write API
-- [ ] make an explicit complete-format release-scope decision
+- [x] review public Ddoc and dependency versions for the final Read/Write API
+- [x] make an explicit complete-format release-scope decision
 
-The current implementation must not be presented as a release or as complete
-TIFF, JPEG or PNG support until all release gates above are resolved.
+## Post-release validation
+
+- [ ] integrate a real editor or satellite application consumer
+- [ ] repeat the performance matrix on an independent host/compiler
+- [ ] expand the malformed-input corpus with sustained fuzzing
+- [ ] review user-visible metadata and quality feedback from the first release
+
+The implementation must not be presented as a complete implementation of every
+TIFF, JPEG or PNG variant. The release scope and unsupported variants must be
+quoted from the capability matrix. Post-release validation items are not
+preconditions for the first 0.x package, but remain tracked commitments.

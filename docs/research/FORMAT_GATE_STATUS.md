@@ -13,7 +13,7 @@ mismatched counts, external arrays outside the file, overlapping blocks,
 short payloads/destinations, arithmetic overflow and unsupported sample or
 compression representations. This closes the local correctness and resource
 items for the bounded core; second-host evidence and a real consumer remain
-open admission gates.
+post-release validation items.
 
 ## Compression
 
@@ -187,8 +187,8 @@ the 1×19 oracle uses a different narrow-image interpolation policy. Broader
 image quality, complete metadata preservation/loss policy, a broad
 real-world/security corpus, competitive performance, a true incremental
 source/sink API and consumer validation
-remain open. `JPEG_GATE_PLAN.md` records the evidence; no public format/API
-admission follows.
+remain open as post-release validation items. `JPEG_GATE_PLAN.md` records the
+evidence and the explicitly unsupported variants.
 
 The provisional next research-effort queue is in
 `NEXT_FORMAT_GATE_PRIORITY.md`. It does not change the dependency sequence
