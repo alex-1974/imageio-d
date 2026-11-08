@@ -14,11 +14,12 @@ libraries first; implement only when a consumer-driven experiment shows a
 capability gap and the repository's admission gate is satisfied.
 
 The current branch contains an unreleased, research-backed DUB package and
-public API probes. The qualified research slice is classic TIFF inspection
-and bounded ROI decoding through `transport-d`, including UInt8/UInt16,
-interleaved strips/tiles, zlib Deflate, PackBits, LZW, BigTIFF, grayscale
-JPEG-in-TIFF and Predictor 2. It is not yet a
-supported release or a complete TIFF implementation.
+public API probes. The qualified research slice includes bounded TIFF ROI
+decoding and explicit TIFF writers for UInt8/UInt16 strips/tiles, classic and
+BigTIFF, Deflate, PackBits, LZW and baseline JPEG-in-TIFF, plus independent
+JPEG and PNG read/write paths. It is not yet a supported release: the public
+variant, metadata, ownership and performance contracts still require final
+release audit and documentation reconciliation.
 
 The current consumer flow is:
 
@@ -172,13 +173,12 @@ in `docs/adr/0002-d-idiomatic-api-contract.md`.
 General image-editing software, scientific image editing, and `dunia`
 satellite-image analysis are intended consumers, not available integration
 testbeds today. Editors need both reading and saving; `dunia` needs input,
-while its export needs remain unknown. The bounded TIFF reader work is an
-initial research slice, not the intended format or direction limit. JPEG and PNG
-read/write, TIFF write, and any further common formats require separate
-consumer-backed capability and correctness gates before support can be
-claimed. `dunia` is not yet ready; its exact input/output products and workflow
-must not be inferred. Research may use independent oracles and explicitly
-labeled consumer-shaped probes, but real consumer validation remains open.
+while its export needs remain unknown. The bounded TIFF reader work was the
+initial research slice, not the intended format or direction limit. JPEG and
+PNG read/write and TIFF write now have separate DMD/LDC, malformed-input,
+partial-I/O and independent consumer-shaped gates. `dunia` is not yet ready;
+its exact input/output products and workflow must not be inferred. Real
+consumer validation remains open.
 
 `imageio-d` owns encoded formats and technical representation. `raster-d`
 owns storage/views/ROI; `color-d` owns colour mathematics; `imagery-d` owns

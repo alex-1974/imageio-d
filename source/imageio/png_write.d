@@ -1,4 +1,4 @@
-/** PNG writer foundation for the full PNG Read/Write gate. */
+/** Non-interlaced PNG writer for the qualified PNG Read/Write gate. */
 module imageio.png_write;
 
 import std.algorithm.searching : canFind;
@@ -45,8 +45,8 @@ private size_t chunk(scope ubyte[] output, size_t p, scope const(ubyte)[] type,
 
 /** Encode non-interlaced 8/16-bit gray, RGB and alpha PNG into a sink.
  *
- * This is intentionally a real package entry point, but the PNG gate remains
- * open until indexed/packed/interlaced paths and metadata transfer are added.
+ * Indexed and packed samples are supported; interlaced input/output and
+ * unrecognised ancillary metadata remain explicit unsupported cases.
  */
 ImageWriteResult writePng(ByteSink sink, PngWriteInfo info,
     scope const(ubyte)[] source, size_t rowStride,
