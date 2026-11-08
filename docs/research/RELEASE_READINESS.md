@@ -1,10 +1,10 @@
 # imageio-d release readiness
 
-Status: release-preparation for a deliberately limited `0.1.0-preview`.
+Status: release postponed. No preview or partial release is authorized.
 
-The preview may ship with the open items below when they are stated as
-limitations in the README, Ddoc and changelog. They remain blockers for a
-stable support promise, not for this bounded preview.
+The release requires qualified Read/Write contracts for TIFF, JPEG and PNG.
+Research probes and bounded read-only experiments are evidence only; they do
+not satisfy release support.
 
 ## Proposed first release scope
 
@@ -47,23 +47,26 @@ the compression algorithms and reusable decompression primitives remain in
 - [ ] implicit RGB(A) or radiometric conversion
 - [ ] CRS/georeferencing interpretation
 
-## Preview release gates
+## Release gates
 
-- [x] explicit read-only TIFF/GeoTIFF/COG scope and unsupported list
-- [x] README, changelog and module-level Ddoc describe the preview boundary
-- [x] DMD/LDC and rendered DDox checks pass from a clean dependency graph
+- [ ] TIFF Read/Write supported-variant matrix and independent consumer gate
+- [ ] JPEG Read/Write supported-variant matrix and independent consumer gate
+- [ ] PNG Read/Write supported-variant matrix and independent consumer gate
+- [ ] common source/sink, partial-I/O and failure contract
+- [ ] ownership/lifetime and metadata-loss contract
 - [ ] clean external consumer loads the package from its DUB release graph
 - [ ] package archive and licence contents are verified
+- [x] DMD/LDC and rendered DDox baseline checks pass
 
-## Deferred limitations
+## Known research gaps that remain release blockers
 
 - [ ] freeze ImageRegion ownership and lifetime wording for a stable API
 - [ ] freeze structured error propagation for a stable API
 - [ ] broaden malformed and truncated input coverage through every public path
 - [ ] publish the complete range/overview cost report contract
 - [x] run the complete CI matrix from clean checkouts
-- [x] review public Ddoc and dependency versions for the preview
-- [x] make an explicit bounded preview-scope decision
+- [ ] review public Ddoc and dependency versions for the final Read/Write API
+- [ ] make an explicit complete-format release-scope decision
 
-The preview must not be presented as a complete TIFF or image library. The
-deferred items remain release notes and follow-up gates, not implied support.
+The current implementation must not be presented as a release or as complete
+TIFF, JPEG or PNG support until all release gates above are resolved.
