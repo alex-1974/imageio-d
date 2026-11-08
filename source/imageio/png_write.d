@@ -132,4 +132,27 @@ version (unittest)
         // Signature, IHDR, PLTE, IDAT, IEND; PLTE starts after the IHDR chunk.
         assert(sink.data[37 .. 41] == cast(const(ubyte)[])"PLTE");
     }
+
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits,
+            WriteResult, WriteValue;
+        class FailingSink : ByteSink
+        {
+            size_t accepted;
+            this(size_t accepted) @safe { this.accepted = accepted; }
+            WriteResult write(scope const(ubyte)[] source,
+                WriteLimits limits = WriteLimits.init) @safe
+            {
+                const count = accepted < source.length ? accepted : source.length;
+                return WriteResult.failure(WriteFailure(
+                    WriteError.destinationFailure, count));
+            }
+        }
+        ubyte[3] pixels = [255, 0, 0];
+        auto result = writePng(new FailingSink(5), PngWriteInfo(1, 1, 8, 2),
+            pixels[], 3);
+        assert(result.error == ImageWriteError.sinkFailure);
+        assert(result.bytesWritten == 5);
+    }
 }

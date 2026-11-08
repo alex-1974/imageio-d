@@ -126,4 +126,27 @@ version (unittest)
         assert(sink.data[0 .. 4] == cast(const(ubyte)[])[
             cast(ubyte)'I', cast(ubyte)'I', 42, 0]);
     }
+
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits,
+            WriteResult;
+        class FailingSink : ByteSink
+        {
+            size_t accepted;
+            this(size_t accepted) @safe { this.accepted = accepted; }
+            WriteResult write(scope const(ubyte)[] source,
+                WriteLimits limits = WriteLimits.init) @safe
+            {
+                return WriteResult.failure(WriteFailure(
+                    WriteError.destinationFailure,
+                    accepted < source.length ? accepted : source.length));
+            }
+        }
+        ubyte[1] pixel = [7];
+        auto result = writeClassicTiff(new FailingSink(9),
+            TiffWriteInfo(1, 1, 1, 1), pixel[], 1);
+        assert(result.error == ImageWriteError.sinkFailure);
+        assert(result.bytesWritten == 9);
+    }
 }

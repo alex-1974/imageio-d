@@ -125,4 +125,27 @@ version (unittest)
             JpegWriteMetadata([cast(ubyte)'E'], null));
         assert(rejected.error == ImageWriteError.metadataRejected);
     }
+
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits,
+            WriteResult;
+        class FailingSink : ByteSink
+        {
+            size_t accepted;
+            this(size_t accepted) @safe { this.accepted = accepted; }
+            WriteResult write(scope const(ubyte)[] source,
+                WriteLimits limits = WriteLimits.init) @safe
+            {
+                return WriteResult.failure(WriteFailure(
+                    WriteError.destinationFailure,
+                    accepted < source.length ? accepted : source.length));
+            }
+        }
+        ubyte[3] pixel = [1, 2, 3];
+        auto result = writeJpeg(new FailingSink(7),
+            JpegWriteInfo(1, 1, 3), pixel[], 3);
+        assert(result.error == ImageWriteError.sinkFailure);
+        assert(result.bytesWritten == 7);
+    }
 }
