@@ -1,6 +1,7 @@
 /** PNG writer foundation for the full PNG Read/Write gate. */
 module imageio.png_write;
 
+import std.algorithm.searching : canFind;
 import compression.core : DecodeStatus;
 import compression.encode : encodeZlibStored, zlibStoredSize;
 import compression.checksum : crc32;
@@ -16,6 +17,8 @@ struct PngWriteInfo
     ubyte colorType = 2;
     bool hasAncillary;
     const(ubyte)[] palette;
+    const(ubyte)[] textKeyword;
+    const(ubyte)[] textValue;
 }
 
 private ubyte channels(ubyte colorType) @safe pure nothrow @nogc
@@ -63,8 +66,16 @@ ImageWriteResult writePng(ByteSink sink, PngWriteInfo info,
     if (info.colorType == 3 && (info.palette.length == 0
         || info.palette.length % 3 != 0 || info.palette.length > 256 * 3))
         return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
-    if (info.hasAncillary && options.metadata != MetadataPolicy.allowLoss)
+    const hasText = info.textKeyword.length != 0 || info.textValue.length != 0;
+    const hasMetadata = info.hasAncillary || hasText;
+    if (hasMetadata && options.metadata != MetadataPolicy.allowLoss)
         return ImageWriteResult(ImageWriteError.metadataRejected);
+    if (hasText && (info.textKeyword.length > 79
+        || info.textKeyword.canFind(cast(ubyte)0)
+        || info.textValue.canFind(cast(ubyte)0)))
+        return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
+    if (hasText && info.textKeyword.length == 0)
+        return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
     const rowBits = cast(size_t)info.width * channels(info.colorType) * info.bitDepth;
     const rowBytes = (rowBits + 7) / 8;
     if (rowStride < rowBytes || cast(size_t)(info.height - 1) * rowStride
@@ -86,13 +97,23 @@ ImageWriteResult writePng(ByteSink sink, PngWriteInfo info,
     if (encoded.status != DecodeStatus.done)
         return ImageWriteResult(ImageWriteError.sourceFailure);
     const paletteBytes = info.colorType == 3 ? 12 + info.palette.length : 0;
-    auto output = new ubyte[](57 + encoded.produced + paletteBytes);
+    const textBytes = hasText ? 12 + info.textKeyword.length
+        + info.textValue.length + 1 : 0;
+    auto output = new ubyte[](57 + encoded.produced + paletteBytes + textBytes);
     output[0 .. 8] = [137, 80, 78, 71, 13, 10, 26, 10];
     ubyte[13] ihdr; put32(ihdr[], 0, info.width); put32(ihdr[], 4, info.height);
     ihdr[8] = info.bitDepth; ihdr[9] = info.colorType;
     auto p = chunk(output, 8, cast(const(ubyte)[])"IHDR", ihdr[]);
     if (info.colorType == 3)
         p = chunk(output, p, cast(const(ubyte)[])"PLTE", info.palette);
+    if (hasText)
+    {
+        auto text = new ubyte[](info.textKeyword.length + 1 + info.textValue.length);
+        text[0 .. info.textKeyword.length] = info.textKeyword;
+        text[info.textKeyword.length] = 0;
+        text[info.textKeyword.length + 1 .. $] = info.textValue;
+        p = chunk(output, p, cast(const(ubyte)[])"tEXt", text[]);
+    }
     p = chunk(output, p, cast(const(ubyte)[])"IDAT", zlib[0 .. encoded.produced]);
     chunk(output, p, cast(const(ubyte)[])"IEND", null);
     auto written = sink.write(output[]);
@@ -100,7 +121,9 @@ ImageWriteResult writePng(ByteSink sink, PngWriteInfo info,
     if (written.value().bytesWritten != output.length)
         return ImageWriteResult(ImageWriteError.sinkFailure, written.value().bytesWritten);
     return ImageWriteResult(ImageWriteError.none, output.length,
-        info.hasAncillary ? MetadataDisposition.discarded : MetadataDisposition.notApplicable);
+        info.hasAncillary && !hasText ? MetadataDisposition.discarded
+            : hasText ? MetadataDisposition.preserved
+            : MetadataDisposition.notApplicable);
 }
 
 version (unittest)
@@ -131,6 +154,20 @@ version (unittest)
         assert(sink.data.length == result.bytesWritten);
         // Signature, IHDR, PLTE, IDAT, IEND; PLTE starts after the IHDR chunk.
         assert(sink.data[37 .. 41] == cast(const(ubyte)[])"PLTE");
+    }
+
+    @safe unittest
+    {
+        import transport : MemorySink;
+        ubyte[3] pixels = [255, 0, 0];
+        auto sink = new MemorySink();
+        auto result = writePng(sink,
+            PngWriteInfo(1, 1, 8, 2, false, null,
+                cast(const(ubyte)[])"Author", cast(const(ubyte)[])"imageio-d"),
+            pixels[], 3, ImageWriteOptions(MetadataPolicy.allowLoss, 4096));
+        assert(result.complete);
+        assert(result.metadata == MetadataDisposition.preserved);
+        assert(sink.data.canFind(cast(const(ubyte)[])"tEXt"));
     }
 
     @safe unittest
