@@ -2,6 +2,7 @@ import std.file : read;
 import std.conv : to;
 import imageio : TiffWriteInfo, TiffWriteMetadata, writeClassicTiff,
     writeBigTiff, TiffTileWriteInfo, writeBigTiffTiles, ImageWriteOptions;
+import imageio : writeBigTiffDeflateTiles;
 import transport : FileSink;
 
 int main(string[] args)
@@ -18,6 +19,9 @@ int main(string[] args)
     auto info = TiffWriteInfo(width, height, channels, sampleBytes, 5);
     auto result = args[7] == "tile"
         ? writeBigTiffTiles(sink, TiffTileWriteInfo(width, height, 16, 16,
+            channels, sampleBytes), pixels[], width * channels * sampleBytes)
+        : args[7] == "tile-deflate"
+        ? writeBigTiffDeflateTiles(sink, TiffTileWriteInfo(width, height, 16, 16,
             channels, sampleBytes), pixels[], width * channels * sampleBytes)
         : args[7] == "big"
         ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes)
