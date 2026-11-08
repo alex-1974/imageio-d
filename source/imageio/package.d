@@ -8,4 +8,5 @@
 module imageio;
 
 public import imageio.region;
+public import imageio.io;
 public import imageio.tiff;
