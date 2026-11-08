@@ -13,7 +13,7 @@ jobs:
           submodules: recursive
       - name: Fetch workspace dependencies
         run: |
-          git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
+          git clone --depth 1 --branch v0.2.1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
@@ -37,7 +37,7 @@ jobs:
           submodules: recursive
       - name: Fetch workspace dependencies
         run: |
-          git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
+          git clone --depth 1 --branch v0.2.1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
@@ -60,7 +60,7 @@ jobs:
           submodules: recursive
       - name: Fetch workspace dependencies
         run: |
-          git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
+          git clone --depth 1 --branch v0.2.1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
@@ -85,7 +85,7 @@ jobs:
           submodules: recursive
       - name: Fetch workspace dependencies
         run: |
-          git clone --depth 1 https://github.com/alex-1974/transport-d.git ../transport-d
+          git clone --depth 1 --branch v0.2.1 https://github.com/alex-1974/transport-d.git ../transport-d
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
