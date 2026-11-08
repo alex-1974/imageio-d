@@ -10,6 +10,7 @@ run_gate()
 }
 
 run_gate 'package DMD/LDC' ./check.sh
+run_gate 'clean package archive consumer' ./check_package_consumer.sh
 run_gate 'review scope' ./check_review_scope.sh
 run_gate 'GeoTIFF inspection' experiments/geotiff_metadata/check_inspection.sh
 run_gate 'GeoTIFF range decode' experiments/geotiff_metadata/check_range_decode.sh
