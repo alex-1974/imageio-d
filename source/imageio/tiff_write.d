@@ -109,3 +109,21 @@ ImageWriteResult writeClassicTiff(ByteSink sink, TiffWriteInfo info,
         return ImageWriteResult(ImageWriteError.sinkFailure, written.value().bytesWritten);
     return ImageWriteResult(ImageWriteError.none, encoded.length, MetadataDisposition.notApplicable);
 }
+
+version (unittest)
+{
+    @safe unittest
+    {
+        import transport : MemorySink;
+        ubyte[4] pixels = [1, 2, 3, 4];
+        auto sink = new MemorySink();
+        auto result = writeClassicTiff(sink, TiffWriteInfo(2, 2, 1, 1),
+            pixels[], 2);
+        assert(result.complete);
+        assert(result.bytesWritten == sink.data.length);
+        assert(sink.data.length == tiffWriteRequirements(
+            TiffWriteInfo(2, 2, 1, 1)).fileBytes);
+        assert(sink.data[0 .. 4] == cast(const(ubyte)[])[
+            cast(ubyte)'I', cast(ubyte)'I', 42, 0]);
+    }
+}
