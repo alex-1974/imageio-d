@@ -430,9 +430,9 @@ TiffInspectionResult inspectHeader(ByteSource source)
 {
     ubyte[16] bytes;
     auto result = source.read(ByteRange(0, 8), bytes[0 .. 8], ReadLimits(8));
-    if (result.error != ReadError.none)
-        return TiffInspectionResult(result.error == ReadError.invalidRange
-            ? TiffInspectionError.truncated : mapError(result.error));
+    if (result.hasError)
+        return TiffInspectionResult(result.error().kind == ReadError.invalidRange
+            ? TiffInspectionError.truncated : mapError(result.error().kind));
 
     if (bytes[0] == 'I' && bytes[1] == 'I')
     {
@@ -440,9 +440,9 @@ TiffInspectionResult inspectHeader(ByteSource source)
         if (tiffVersion == 43)
         {
             auto extended = source.read(ByteRange(8, 8), bytes[8 .. 16], ReadLimits(8));
-            if (extended.error != ReadError.none)
-                return TiffInspectionResult(extended.error == ReadError.invalidRange
-                    ? TiffInspectionError.truncated : mapError(extended.error));
+            if (extended.hasError)
+                return TiffInspectionResult(extended.error().kind == ReadError.invalidRange
+                    ? TiffInspectionError.truncated : mapError(extended.error().kind));
             if (read16(bytes[4 .. 6], true) != 8 || read16(bytes[6 .. 8], true) != 0)
                 return TiffInspectionResult(TiffInspectionError.invalidMagic);
             return validateHeader(true, tiffVersion, read64(bytes[8 .. 16], true), true);
@@ -457,9 +457,9 @@ TiffInspectionResult inspectHeader(ByteSource source)
         if (tiffVersion == 43)
         {
             auto extended = source.read(ByteRange(8, 8), bytes[8 .. 16], ReadLimits(8));
-            if (extended.error != ReadError.none)
-                return TiffInspectionResult(extended.error == ReadError.invalidRange
-                    ? TiffInspectionError.truncated : mapError(extended.error));
+            if (extended.hasError)
+                return TiffInspectionResult(extended.error().kind == ReadError.invalidRange
+                    ? TiffInspectionError.truncated : mapError(extended.error().kind));
             if (read16(bytes[4 .. 6], false) != 8 || read16(bytes[6 .. 8], false) != 0)
                 return TiffInspectionResult(TiffInspectionError.invalidMagic);
             return validateHeader(false, tiffVersion, read64(bytes[8 .. 16], false), true);
@@ -503,9 +503,9 @@ private TiffInspectionResult inspectIfd(ByteSource source, TiffHeader header,
         return inspectBigIfd(source, header, ifdOffset);
     ubyte[2] countBytes;
     auto countResult = source.read(ByteRange(ifdOffset, 2), countBytes[], ReadLimits(2));
-    if (countResult.error != ReadError.none)
-        return TiffInspectionResult(countResult.error == ReadError.invalidRange
-            ? TiffInspectionError.truncated : mapError(countResult.error));
+    if (countResult.hasError)
+        return TiffInspectionResult(countResult.error().kind == ReadError.invalidRange
+            ? TiffInspectionError.truncated : mapError(countResult.error().kind));
 
     auto count = read16(countBytes[], header.littleEndian);
     if (count > (size_t.max - 6) / 12)
@@ -515,9 +515,9 @@ private TiffInspectionResult inspectIfd(ByteSource source, TiffHeader header,
     auto offset = cast(ulong) ifdOffset;
     ubyte[] ifd = new ubyte[](length);
     auto ifdResult = source.read(ByteRange(offset, length), ifd[], ReadLimits(length));
-    if (ifdResult.error != ReadError.none)
-        return TiffInspectionResult(ifdResult.error == ReadError.invalidRange
-            ? TiffInspectionError.truncated : mapError(ifdResult.error));
+    if (ifdResult.hasError)
+        return TiffInspectionResult(ifdResult.error().kind == ReadError.invalidRange
+            ? TiffInspectionError.truncated : mapError(ifdResult.error().kind));
 
     TiffImageInfo info;
     info.header = header;
@@ -586,18 +586,18 @@ private TiffInspectionResult inspectBigIfd(ByteSource source, TiffHeader header,
 {
     ubyte[8] countBytes;
     auto countResult = source.read(ByteRange(ifdOffset, 8), countBytes[], ReadLimits(8));
-    if (countResult.error != ReadError.none)
-        return TiffInspectionResult(countResult.error == ReadError.invalidRange
-            ? TiffInspectionError.truncated : mapError(countResult.error));
+    if (countResult.hasError)
+        return TiffInspectionResult(countResult.error().kind == ReadError.invalidRange
+            ? TiffInspectionError.truncated : mapError(countResult.error().kind));
     auto count = read64(countBytes[], header.littleEndian);
     if (count > (size_t.max - 16) / 20)
         return TiffInspectionResult(TiffInspectionError.invalidRange);
     auto length = 8 + cast(size_t) count * 20 + 8;
     ubyte[] ifd = new ubyte[](length);
     auto ifdResult = source.read(ByteRange(ifdOffset, length), ifd[], ReadLimits(length));
-    if (ifdResult.error != ReadError.none)
-        return TiffInspectionResult(ifdResult.error == ReadError.invalidRange
-            ? TiffInspectionError.truncated : mapError(ifdResult.error));
+    if (ifdResult.hasError)
+        return TiffInspectionResult(ifdResult.error().kind == ReadError.invalidRange
+            ? TiffInspectionError.truncated : mapError(ifdResult.error().kind));
 
     TiffImageInfo info;
     info.header = header;
@@ -742,7 +742,7 @@ private TiffDecodeResult decodeInfo(ByteSource source, TiffImageInfo info,
         ubyte[] values = new ubyte[](length);
         auto bitsRead = source.read(ByteRange(info.bitsPerSampleValues.valueOffset,
             length), values[], ReadLimits(length));
-        if (bitsRead.error != ReadError.none)
+        if (bitsRead.hasError)
             return TiffDecodeResult(TiffDecodeError.sourceFailure);
         auto first = read16(values[0 .. 2], info.header.littleEndian);
         foreach (i; 1 .. info.bitsPerSampleValues.count)
@@ -798,8 +798,8 @@ private TiffDecodeResult decodeInfo(ByteSource source, TiffImageInfo info,
         auto encoded = new ubyte[](encodedBytes);
         auto read = source.read(ByteRange(offsets[strip], encodedBytes), encoded[],
             ReadLimits(encodedBytes));
-        if (read.error != ReadError.none || read.bytesRead < encodedBytes)
-            return TiffDecodeResult(read.error == ReadError.none
+        if (read.hasError || read.value.bytesRead < encodedBytes)
+            return TiffDecodeResult(!read.hasError
                 ? TiffDecodeError.truncated : TiffDecodeError.sourceFailure);
         auto payload = new ubyte[](stripBytes);
         if (!decodePayload(info.compression, encoded[], payload[],
@@ -1088,7 +1088,7 @@ private TiffDecodeResult decodeTiled(ByteSource source, TiffImageInfo info,
             auto encoded = new ubyte[](encodedBytes);
             auto read = source.read(ByteRange(offsets[tileIndex], encodedBytes),
                 encoded[], ReadLimits(encodedBytes));
-            if (read.error != ReadError.none || read.bytesRead < encodedBytes)
+            if (read.hasError || read.value.bytesRead < encodedBytes)
                 return TiffDecodeResult(TiffDecodeError.sourceFailure);
             auto tile = new ubyte[](tileBytes);
             if (!decodePayload(info.compression, encoded[], tile[],
@@ -1140,7 +1140,7 @@ private double[] readDoubleValues(ByteSource source, TiffTagReference reference,
     auto bytes = new ubyte[](values.length * 8);
     auto result = source.read(ByteRange(reference.valueOffset, bytes.length),
         bytes[], ReadLimits(bytes.length));
-    if (result.error != ReadError.none || result.bytesRead < bytes.length)
+    if (result.hasError || result.value.bytesRead < bytes.length)
         return null;
     foreach (i; 0 .. values.length)
         values[i] = bitsAsDouble(read64(bytes[i * 8 .. i * 8 + 8], little));
@@ -1168,7 +1168,7 @@ private bool populateGeoTechnical(ByteSource source, ref TiffImageInfo info)
         {
             auto read = source.read(ByteRange(info.geoKeyDirectoryRef.valueOffset,
                 bytes.length), bytes[], ReadLimits(bytes.length));
-            if (read.error != ReadError.none || read.bytesRead < bytes.length)
+            if (read.hasError || read.value.bytesRead < bytes.length)
                 return false;
         }
         info.geoKeyDirectoryValues = new ushort[](cast(size_t) info.geoKeyDirectoryCount);
@@ -1248,7 +1248,7 @@ private ulong[] readLongValues(ByteSource source, TiffTagReference reference, bo
     ubyte[] bytes = new ubyte[](length);
     auto result = source.read(ByteRange(reference.valueOffset, length), bytes[],
         ReadLimits(length));
-    if (result.error != ReadError.none)
+    if (result.hasError)
         return null;
     auto values = new ulong[](reference.count);
     foreach (i; 0 .. reference.count)
@@ -1277,7 +1277,7 @@ private ubyte[] readTagBytes(ByteSource source, TiffTagReference reference,
     }
     auto result = source.read(ByteRange(reference.valueOffset, length), bytes[],
         ReadLimits(length));
-    return result.error == ReadError.none ? bytes : null;
+    return !result.hasError ? bytes : null;
 }
 
 private void applyPredictor(scope ubyte[] bytes, size_t width, size_t rows,
