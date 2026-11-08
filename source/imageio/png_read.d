@@ -14,6 +14,7 @@ struct PngReadInfo
     ubyte bitDepth;
     ubyte colorType;
     size_t rowBytes;
+    uint paletteEntries;
 }
 
 private uint be32(scope const(ubyte)[] b, size_t p) @safe pure nothrow @nogc
@@ -69,14 +70,21 @@ ImageReadResult readPng(scope const(ubyte)[] file, scope ubyte[] destination,
         return ImageReadResult(ImageReadError.malformedInput);
     const width = be32(file, 16), height = be32(file, 20);
     const depth = file[24], type = file[25], interlace = file[28];
+    const validDepth = type == 0 ? (depth == 1 || depth == 2 || depth == 4
+        || depth == 8 || depth == 16) : type == 3
+        ? (depth == 1 || depth == 2 || depth == 4 || depth == 8)
+        : (depth == 8 || depth == 16);
     if (width == 0 || height == 0 || cast(ulong)width * height > maximumPixels
-        || interlace != 0 || (depth != 8 && depth != 16)
-        || (type != 0 && type != 2 && type != 4 && type != 6))
+        || interlace != 0 || !validDepth
+        || (type != 0 && type != 2 && type != 3 && type != 4 && type != 6))
         return ImageReadResult(ImageReadError.unsupportedRepresentation);
-    const rowBytes = cast(size_t)width * channels(type) * (depth / 8);
+    const rowBits = cast(size_t)width * (type == 3 ? 1 : channels(type)) * depth;
+    const rowBytes = (rowBits + 7) / 8;
     if (rowStride < rowBytes || cast(size_t)(height - 1) * rowStride + rowBytes > destination.length)
         return ImageReadResult(ImageReadError.sizeLimit);
     size_t idatBytes;
+    uint paletteEntries;
+    bool paletteSeen;
     for (size_t p = 8; p < file.length;)
     {
         if (file.length - p < 12) return ImageReadResult(ImageReadError.truncatedInput);
@@ -90,8 +98,17 @@ ImageReadResult readPng(scope const(ubyte)[] file, scope ubyte[] destination,
                 return ImageReadResult(ImageReadError.checksumFailure);
         if (file[p + 4 .. p + 8] == cast(const(ubyte)[])"IDAT")
             idatBytes += data.length;
+        if (file[p + 4 .. p + 8] == cast(const(ubyte)[])"PLTE")
+        {
+            if (length == 0 || length % 3 != 0 || length > 256 * 3)
+                return ImageReadResult(ImageReadError.malformedInput);
+            paletteEntries = cast(uint)(length / 3);
+            paletteSeen = true;
+        }
         p = end;
     }
+    if (type == 3 && !paletteSeen)
+        return ImageReadResult(ImageReadError.malformedInput);
     auto compressed = new ubyte[](idatBytes);
     size_t copied;
     for (size_t p = 8; p < file.length;)
@@ -108,7 +125,7 @@ ImageReadResult readPng(scope const(ubyte)[] file, scope ubyte[] destination,
     if (inflated.status != DecodeStatus.done || inflated.produced != filteredBytes)
         return ImageReadResult(ImageReadError.codecFailure);
     auto previous = new ubyte[](rowBytes);
-    const bpp = cast(size_t)channels(type) * (depth / 8);
+    const bpp = (cast(size_t)(type == 3 ? 1 : channels(type)) * depth + 7) / 8;
     foreach (size_t y; 0 .. height)
     {
         auto row = filtered[y * (rowBytes + 1) .. (y + 1) * (rowBytes + 1)];
