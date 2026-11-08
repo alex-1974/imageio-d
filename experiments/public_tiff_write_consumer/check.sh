@@ -63,6 +63,12 @@ for compiler in dmd ldc2; do
     gdal_translate -q -of ENVI -ot UInt16 -co INTERLEAVE=BIP \
         "$build/tile-lzw-$compiler.tif" "$build/decoded-lzw-$compiler"
     cmp "$build/input.raw" "$build/decoded-lzw-$compiler"
+    "$root/imageio-public-tiff-write-consumer" 19 11 3 1 \
+        "$build/input.raw" "$build/tile-jpeg-$compiler.tif" tile-jpeg
+    jpegReport=$(gdalinfo "$build/tile-jpeg-$compiler.tif")
+    echo "$jpegReport" | grep -F "Size is 19, 11" >/dev/null
+    echo "$jpegReport" | grep -F "Type=Byte" >/dev/null
+    echo "$jpegReport" | grep -F "Compression=JPEG" >/dev/null
     "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
         "$build/input.raw" "$build/big-metadata-$compiler.tif" big-metadata
     bigMetadataReport=$(gdalinfo "$build/big-metadata-$compiler.tif")
