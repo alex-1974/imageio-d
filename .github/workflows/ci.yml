@@ -107,3 +107,5 @@ jobs:
         run: ./check_package_consumer.sh
       - name: Run public TIFF write consumer
         run: experiments/public_tiff_write_consumer/check.sh
+      - name: Run public JPEG consumer
+        run: experiments/public_jpeg_consumer/check.sh
