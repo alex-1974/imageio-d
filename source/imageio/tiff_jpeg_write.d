@@ -42,3 +42,17 @@ ImageWriteResult writeBigTiffJpegTiles(ByteSink sink, TiffTileWriteInfo info,
     size_t data=pixels;foreach(size_t n;0..tiles){p64(buf,offsets+n*8,data);p64(buf,counts+n*8,compressed[n].length);buf[data..data+compressed[n].length]=compressed[n][];data+=compressed[n].length;}
     auto w=sink.write(buf[]);if(w.hasError)return mapSinkFailure(w.error().bytesWritten,w.error().kind);if(w.value().bytesWritten!=buf.length)return ImageWriteResult(ImageWriteError.sinkFailure,w.value().bytesWritten);return ImageWriteResult(ImageWriteError.none,buf.length,MetadataDisposition.notApplicable);
 }
+
+version (unittest)
+{
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits, WriteResult;
+        class Sink : ByteSink { size_t n; this(size_t n){this.n=n;}
+            WriteResult write(scope const(ubyte)[] b, WriteLimits l=WriteLimits.init)
+            { return WriteResult.failure(WriteFailure(WriteError.destinationFailure,n<b.length?n:b.length)); } }
+        ubyte[3] pixel=[1,2,3];
+        auto r=writeBigTiffJpegTiles(new Sink(7),TiffTileWriteInfo(1,1,1,1,3,1),pixel[],3);
+        assert(r.error==ImageWriteError.sinkFailure && r.bytesWritten==7);
+    }
+}

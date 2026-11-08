@@ -90,3 +90,18 @@ ImageWriteResult writeBigTiffDeflateTiles(ByteSink sink, TiffTileWriteInfo info,
     if (w.value().bytesWritten != buf.length) return ImageWriteResult(ImageWriteError.sinkFailure,w.value().bytesWritten);
     return ImageWriteResult(ImageWriteError.none,buf.length,MetadataDisposition.notApplicable);
 }
+
+version (unittest)
+{
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits, WriteResult;
+        class Sink : ByteSink { size_t n; this(size_t n) { this.n=n; }
+            WriteResult write(scope const(ubyte)[] b, WriteLimits l=WriteLimits.init)
+            { return WriteResult.failure(WriteFailure(WriteError.destinationFailure,
+                n < b.length ? n : b.length)); } }
+        ubyte[3] pixel=[1,2,3];
+        auto r=writeBigTiffDeflateTiles(new Sink(7),TiffTileWriteInfo(1,1,1,1,3,1),pixel[],3);
+        assert(r.error==ImageWriteError.sinkFailure && r.bytesWritten==7);
+    }
+}

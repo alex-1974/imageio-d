@@ -35,6 +35,20 @@ private size_t lzwLiteral(scope const(ubyte)[] input, scope ubyte[] output)
     return p;
 }
 
+version (unittest)
+{
+    @safe unittest
+    {
+        import transport : ByteSink, WriteError, WriteFailure, WriteLimits, WriteResult;
+        class Sink : ByteSink { size_t n; this(size_t n){this.n=n;}
+            WriteResult write(scope const(ubyte)[] b, WriteLimits l=WriteLimits.init)
+            { return WriteResult.failure(WriteFailure(WriteError.destinationFailure,n<b.length?n:b.length)); } }
+        ubyte[3] pixel=[1,2,3];
+        auto r=writeBigTiffLzwTiles(new Sink(7),TiffTileWriteInfo(1,1,1,1,3,1),pixel[],3);
+        assert(r.error==ImageWriteError.sinkFailure && r.bytesWritten==7);
+    }
+}
+
 /** Write chunky UInt8/UInt16 BigTIFF tiles compressed with literal-safe LZW. */
 ImageWriteResult writeBigTiffLzwTiles(ByteSink sink, TiffTileWriteInfo info,
     scope const(ubyte)[] source, size_t rowStride,
