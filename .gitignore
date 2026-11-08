@@ -16,3 +16,15 @@ experiments/**/.build/
 /tmp/
 /cache/
 *.log
+.docs-ddox/
+docs.json
+docs/file_hashes.json
+docs/index.html
+docs/imageio.html
+docs/imageio/
+docs/images/
+docs/prettify/
+docs/scripts/
+docs/sitemap.xml
+docs/styles/
+docs/symbols.js
