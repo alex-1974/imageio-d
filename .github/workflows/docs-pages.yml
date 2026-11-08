@@ -1,0 +1,49 @@
+name: publish DDox documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch workspace dependencies
+        run: |
+          git clone --depth 1 --branch v0.2.1 https://github.com/alex-1974/transport-d.git ../transport-d
+          git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
+          mkdir -p ../../../
+          git clone --depth 1 --branch v0.3.0 https://github.com/alex-1974/compression-d.git ../../../compression-d
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: dmd-latest
+      - name: Build DDox site
+        run: ./check_docs.sh
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
