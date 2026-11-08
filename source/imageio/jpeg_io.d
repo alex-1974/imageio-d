@@ -3,7 +3,8 @@ module imageio.jpeg_io;
 
 import compression.jpeg : Info, Limits, EncodeOptions, Sampling, Result,
     encodeJpeg, decodeJpeg, Status, EncodeMetadata,
-    JpegMetadataPolicy = MetadataPolicy;
+    JpegMetadataPolicy = MetadataPolicy, MetadataSegment,
+    inspectJpegMetadata;
 import transport : ByteSink;
 import imageio.io : ImageReadError, ImageReadResult, ImageWriteError,
     ImageWriteOptions, ImageWriteResult, MetadataDisposition, MetadataPolicy,
@@ -46,6 +47,51 @@ struct JpegWriteMetadata
 {
     const(ubyte)[] exif;
     const(ubyte)[] icc;
+}
+
+/** JPEG metadata offsets borrow the encoded input for the call's lifetime. */
+struct JpegMetadataInfo
+{
+    ImageReadError error = ImageReadError.none;
+    size_t exifOffset;
+    size_t exifLength;
+    size_t iccBytes;
+    ubyte iccSegments;
+    size_t opaqueSegments;
+    size_t opaqueBytes;
+    size_t containerLossSegments;
+    size_t containerLossBytes;
+
+    @property bool complete() const @safe pure nothrow @nogc
+    { return error == ImageReadError.none; }
+}
+
+private ImageReadError mapMetadata(Status status) @safe pure nothrow @nogc
+{
+    final switch (status)
+    {
+        case Status.ok: return ImageReadError.none;
+        case Status.invalid: return ImageReadError.malformedInput;
+        case Status.truncated: return ImageReadError.truncatedInput;
+        case Status.unsupported: return ImageReadError.unsupportedRepresentation;
+        case Status.limit: return ImageReadError.sizeLimit;
+        case Status.destinationTooSmall: return ImageReadError.sizeLimit;
+    }
+}
+
+/** Inspect EXIF/ICC without applying orientation or colour semantics.
+ *
+ * Metadata offsets borrow the encoded input for the call's lifetime.
+ */
+JpegMetadataInfo inspectJpeg(scope const(ubyte)[] encoded,
+    scope MetadataSegment[] segments, Limits limits = Limits.init)
+@safe pure nothrow @nogc
+{
+    auto result = inspectJpegMetadata(encoded, segments, limits);
+    return JpegMetadataInfo(mapMetadata(result.status), result.exifOffset,
+        result.exifLength, result.iccBytes, result.iccSegments,
+        result.opaqueSegments, result.opaqueBytes,
+        result.containerLossSegments, result.containerLossBytes);
 }
 
 /** Encode baseline gray/RGB JPEG into a sink with explicit quality policy. */
@@ -147,5 +193,21 @@ version (unittest)
             JpegWriteInfo(1, 1, 3), pixel[], 3);
         assert(result.error == ImageWriteError.sinkFailure);
         assert(result.bytesWritten == 7);
+    }
+
+    @safe unittest
+    {
+        import transport : MemorySink;
+        ubyte[3] pixel = [1, 2, 3];
+        immutable ubyte[6] exif = ['E', 'x', 'i', 'f', 0, 0];
+        auto sink = new MemorySink();
+        auto written = writeJpeg(sink, JpegWriteInfo(1, 1, 3), pixel[], 3,
+            75, Sampling.s444, ImageWriteOptions(MetadataPolicy.allowLoss, 4096),
+            JpegWriteMetadata(exif[], null));
+        assert(written.complete);
+        MetadataSegment[1] segments;
+        auto metadata = inspectJpeg(sink.data, segments[]);
+        assert(metadata.complete);
+        assert(metadata.exifLength == exif.length);
     }
 }
