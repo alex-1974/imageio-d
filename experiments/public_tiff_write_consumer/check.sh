@@ -20,7 +20,7 @@ PY
 for compiler in dmd ldc2; do
     dub build --root="$root" --compiler="$compiler" --build=release-nobounds
     "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
-        "$build/input.raw" "$build/output-$compiler.tif"
+        "$build/input.raw" "$build/output-$compiler.tif" metadata
     gdal_translate -q -of ENVI -ot UInt16 -co INTERLEAVE=BIP \
         "$build/output-$compiler.tif" "$build/decoded-$compiler"
     cmp "$build/input.raw" "$build/decoded-$compiler"
@@ -28,5 +28,6 @@ for compiler in dmd ldc2; do
     echo "$report" | grep -F "Size is 19, 11" >/dev/null
     test "$(echo "$report" | grep -c '^Band ')" -eq 3
     echo "$report" | grep -F "Type=UInt16" >/dev/null
+    echo "$report" | grep -F "NoData Value=-9999" >/dev/null
 done
 echo 'public TIFF write consumer passed under DMD/LDC'

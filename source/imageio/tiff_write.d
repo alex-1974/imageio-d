@@ -106,12 +106,12 @@ private void encodeClassicTiff(TiffWriteInfo info, TiffWriteMetadata metadata,
     entry(output, p, 284, 3, 1, 1);
     if (info.channels == 2 || info.channels == 4)
         entry(output, p, 338, 3, 1, 2);
-    if (metadata.noDataAscii.length != 0)
-        entry(output, p, 42113, 2, cast(uint)(metadata.noDataAscii.length + 1),
-            cast(uint)req.noDataOffset);
     if (metadata.geoKeyDirectory.length != 0)
         entry(output, p, 34735, 3, cast(uint)metadata.geoKeyDirectory.length,
             cast(uint)req.geoKeyOffset);
+    if (metadata.noDataAscii.length != 0)
+        entry(output, p, 42113, 2, cast(uint)(metadata.noDataAscii.length + 1),
+            cast(uint)req.noDataOffset);
     put32(output, p, 0);
     if (info.channels > 2)
         foreach (size_t i; 0 .. info.channels) put16(output, bitsOffset + i * 2, cast(ushort)bits);
