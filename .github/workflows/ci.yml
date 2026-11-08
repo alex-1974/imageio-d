@@ -17,9 +17,7 @@ jobs:
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
-          # imageio-d's JPEG metadata contract is currently provided by this
-          # research commit; master does not yet export those symbols.
-          git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
+          git clone --depth 1 --branch v0.3.0 https://github.com/alex-1974/compression-d.git ../../../compression-d
       - uses: dlang-community/setup-dlang@v2
         with:
           compiler: dmd-latest
@@ -43,8 +41,7 @@ jobs:
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
-          # Keep the dependency revision aligned with the JPEG metadata API.
-          git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
+          git clone --depth 1 --branch v0.3.0 https://github.com/alex-1974/compression-d.git ../../../compression-d
       - uses: dlang-community/setup-dlang@v2
         with:
           compiler: ldc-latest
@@ -66,8 +63,7 @@ jobs:
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
-          # Keep the dependency revision aligned with the JPEG metadata API.
-          git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
+          git clone --depth 1 --branch v0.3.0 https://github.com/alex-1974/compression-d.git ../../../compression-d
       - name: Install GeoTIFF fixture tools
         run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal
       - uses: dlang-community/setup-dlang@v2
@@ -91,8 +87,7 @@ jobs:
           git clone --depth 1 https://github.com/alex-1974/containers-d.git ../containers-d
           git clone --depth 1 https://github.com/alex-1974/raster-d.git ../raster-d
           mkdir -p ../../../
-          # Keep the dependency revision aligned with the JPEG metadata API.
-          git clone --depth 1 --branch codex/fix-dip1000-bitwriter https://github.com/alex-1974/compression-d.git ../../../compression-d
+          git clone --depth 1 --branch v0.3.0 https://github.com/alex-1974/compression-d.git ../../../compression-d
       - name: Install independent GeoTIFF oracle
         run: sudo apt-get update && sudo apt-get install -y gdal-bin python3-gdal python3-pil imagemagick
       - uses: dlang-community/setup-dlang@v2
@@ -108,3 +103,5 @@ jobs:
           dub fetch silly@1.1.1
       - name: Run complete local research gate sequence
         run: ./check_all_research_gates.sh
+      - name: Verify clean package archive consumer
+        run: ./check_package_consumer.sh
