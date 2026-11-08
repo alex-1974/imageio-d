@@ -9,7 +9,7 @@ libraries first; implement only when a consumer-driven experiment shows a
 capability gap and the repository's admission gate is satisfied.
 
 The current branch contains an unreleased, research-backed DUB package and
-public API probes. The qualified vertical slice is classic TIFF inspection
+public API probes. The qualified research slice is classic TIFF inspection
 and bounded ROI decoding through `transport-d`, including UInt8/UInt16,
 interleaved strips/tiles, zlib Deflate, PackBits, LZW, BigTIFF, grayscale
 JPEG-in-TIFF and Predictor 2. It is not yet a
@@ -121,9 +121,10 @@ public API requirement.
 ## Development and activation policy
 
 Current `develop` is research coordination, **not** a released library.
-No production `dub.sdl`, `source/` tree, public module root or release baseline
-exists. Follow `AGENTS.md`, `ROADMAP.md` and current workspace engineering
-rules. The first implementation must be a measured consumer vertical slice.
+The repository now contains an unreleased `dub.sdl`, `source/` tree and
+package-root module for reproducible research consumers. These files do not
+constitute a supported release baseline or a frozen public API. Follow
+`AGENTS.md`, `ROADMAP.md` and current workspace engineering rules.
 
 ## Product hypothesis
 
