@@ -23,8 +23,8 @@ and passes an externally generated PackBits TIFF fixture against GDAL raw
 output under DMD and LDC. Four-strip and one-tile PackBits fixtures now pass.
 The caller-owned Scratch-Buffer is the hard expansion limit: no unbounded
 decompression buffer is allocated. Truncated literals/runs and insufficient
-destinations are covered under both compilers. Broader codec coverage remains
-open for Deflate/LZW and other compression-specific semantics.
+destinations are covered under both compilers. The public writer gate now also
+qualifies Deflate, PackBits, LZW and JPEG BigTIFF tile writers through GDAL.
 
 The workspace-size API and separate `workspaceTooSmall` status are implemented
 in the experimental TIFF slice. A separate `compression_consumer` experiment
@@ -144,20 +144,21 @@ The exercised write paths have independent output decode oracles. Chunk CRC/orde
 split IDAT, short buffers, corrupt zlib, palette-index bounds and explicit
 metadata loss are probed. A separate same-shape transfer probe retains safe
 ancillary chunks, requires explicit applicability for known colour metadata,
-and rejects or explicitly drops unknown unsafe chunks. Writer support for
-indexed/packed samples, broader semantic metadata preservation, Adam7/APNG,
-chunked source input, balanced speed/size compression and a
-public API remain open. `PNG_RW_BASELINE.md` and `PNG_EDITOR_GATE.md` record
-the measurements and unresolved contract. Gate P remains open.
+and rejects or explicitly drops unknown unsafe chunks. Indexed/packed writer
+support is now exercised by the public PNG consumer; broader semantic metadata
+preservation, Adam7/APNG, chunked source input, balanced speed/size compression
+and a public application API remain open. `PNG_RW_BASELINE.md` and
+`PNG_EDITOR_GATE.md` record the measurements and unresolved contract. Gate P
+remains an admission gate, not a failed local codec gate.
 
 ## Classic TIFF write
 
-`experiments/tiff_write/` adds a separate Pure-D, caller-owned, uncompressed
-classic-TIFF write probe: one chunky strip, 8-/16-bit gray, gray+alpha, RGB
-and RGBA. DMD/LDC output passes independent GDAL dimensions, band/sample
-type and exact native-pixel oracles. Tiling, compression, multi-strip,
-metadata, BigTIFF write, large-file and sink/partial-write behavior are open.
-This is not a general TIFF writer or format-gate admission.
+The public package now has caller-owned classic and BigTIFF writers for
+8-/16-bit chunky strips/tiles, technical metadata, Deflate, PackBits, LZW and
+baseline JPEG-in-TIFF. DMD/LDC output passes independent GDAL dimensions,
+band/sample type, compression and native-pixel oracles. Full metadata
+round-trip, large-file qualification and real application integration remain
+open admission work.
 
 ## JPEG
 
