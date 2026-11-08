@@ -11,6 +11,7 @@ public import imageio.region;
 public import imageio.io;
 public import imageio.tiff;
 public import imageio.tiff_write;
+public import imageio.tiff_big_write;
 public import imageio.png_write;
 public import imageio.png_read;
 public import imageio.jpeg_io;

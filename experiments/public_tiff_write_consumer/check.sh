@@ -29,5 +29,10 @@ for compiler in dmd ldc2; do
     test "$(echo "$report" | grep -c '^Band ')" -eq 3
     echo "$report" | grep -F "Type=UInt16" >/dev/null
     echo "$report" | grep -F "NoData Value=-9999" >/dev/null
+    "$root/imageio-public-tiff-write-consumer" 19 11 3 2 \
+        "$build/input.raw" "$build/big-$compiler.tif" big
+    bigReport=$(gdalinfo "$build/big-$compiler.tif")
+    echo "$bigReport" | grep -F "Size is 19, 11" >/dev/null
+    echo "$bigReport" | grep -F "Type=UInt16" >/dev/null
 done
 echo 'public TIFF write consumer passed under DMD/LDC'

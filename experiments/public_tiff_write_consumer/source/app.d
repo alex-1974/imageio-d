@@ -1,7 +1,7 @@
 import std.file : read;
 import std.conv : to;
 import imageio : TiffWriteInfo, TiffWriteMetadata, writeClassicTiff,
-    ImageWriteOptions;
+    writeBigTiff, ImageWriteOptions;
 import transport : FileSink;
 
 int main(string[] args)
@@ -15,13 +15,14 @@ int main(string[] args)
     auto pixels = cast(ubyte[])read(args[5]);
     auto sink = new FileSink(args[6]);
     immutable ushort[4] geoKeys = [1, 1, 0, 0];
-    auto result = writeClassicTiff(sink,
-        TiffWriteInfo(width, height, channels, sampleBytes, 5),
-        pixels[], width * channels * sampleBytes,
-        ImageWriteOptions.init,
-        args[7] == "metadata"
-            ? TiffWriteMetadata(cast(const(ubyte)[])"-9999", geoKeys[])
-            : TiffWriteMetadata.init);
+    auto info = TiffWriteInfo(width, height, channels, sampleBytes, 5);
+    auto result = args[7] == "big"
+        ? writeBigTiff(sink, info, pixels[], width * channels * sampleBytes)
+        : writeClassicTiff(sink, info, pixels[], width * channels * sampleBytes,
+            ImageWriteOptions.init,
+            args[7] == "metadata"
+                ? TiffWriteMetadata(cast(const(ubyte)[])"-9999", geoKeys[])
+                : TiffWriteMetadata.init);
     sink.close();
     return result.complete ? 0 : 1;
 }
