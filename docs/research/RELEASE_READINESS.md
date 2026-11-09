@@ -1,8 +1,8 @@
 # imageio-d release readiness
 
-Status: release candidate preparation. No preview or partial release is
-authorized; the first complete 0.x release may proceed after the local
-technical gates below pass.
+Status: v0.1.1 released. The bounded public subset below is the release
+contract; broader variants and post-release validation remain explicitly
+tracked.
 
 The release requires qualified Read/Write contracts for TIFF, JPEG and PNG.
 Research probes alone do not satisfy release support; the public DUB package,
@@ -12,7 +12,7 @@ post-release validation gate.
 
 ## Proposed first release scope
 
-The first release candidate is intentionally limited to classic TIFF/COG
+The first release is intentionally limited to classic TIFF/COG
 inputs with classic TIFF and BigTIFF UInt8/UInt16 samples, interleaved strips or
 tiles, zlib Deflate, PackBits, LZW, grayscale JPEG-in-TIFF, Predictor 2, bounded ROI reads and technical
 overview selection.
@@ -38,16 +38,36 @@ promise a complete TIFF implementation.
 - [x] grayscale JPEG-in-TIFF with compression-d JPEG and JPEGTables
 - [x] DMD/LDC external consumers
 - [x] local-file and HTTP/COG consumer paths
+- [x] public bounded TIFF writer entry point and atomic file publication
+- [x] public TIFF decode cost/path reporting (`bytesRequested`, `decodedBytes`,
+  `fromNativeBlocks`)
 
 Compression ownership: `imageio-d` selects and invokes codec functionality;
 the compression algorithms and reusable decompression primitives remain in
 `compression-d`.
 
+## Public writer contract
+
+The bounded writer surface is available from the package root:
+
+```d
+auto result = writeImage(sink, ImageWriteRequest(
+    ImageWriteFormat.tiff, width, height, channels, sampleBytes,
+    rowsPerStrip, pixels, rowStride));
+auto fileResult = writeImageFile(path, request);
+```
+
+`writeImageFile` stages output in a same-directory temporary file and replaces
+the destination only after complete encoding and sink close. Expected failures
+are returned as `ImageWriteResult`; caller input is not modified. The generic
+entry point currently admits the bounded classic-TIFF representation.
+Format-specific PNG/JPEG and broader TIFF writers remain explicit APIs.
+
 ## Deliberately unsupported
 
 - [ ] TIFF PlanarConfiguration 2 decoding
 - [ ] multi-component JPEG-in-TIFF native-plane materialization
-- [ ] PNG and JPEG readers (separate format gates)
+- [ ] broader PNG/JPEG variants beyond the separately declared read/write gates
 - [ ] implicit RGB(A) or radiometric conversion
 - [ ] CRS/georeferencing interpretation
 

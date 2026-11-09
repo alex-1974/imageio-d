@@ -16,7 +16,7 @@ oracle also passed both compilers on 2026-10-28. These checks reuse small,
 generated corpora; they are not representative editor or satellite products.
 The separate TIFF/BigTIFF read and Deflate range experiments have wider
 technical coverage than the current writer. GeoTIFF keys and COG-specific
-access remain contract-only. See `CAPABILITY_MATRIX.md`, `JPEG_GATE_PLAN.md`,
+access remain bounded and consumer-qualified rather than universal. See `CAPABILITY_MATRIX.md`, `JPEG_GATE_PLAN.md`,
 `PNG_EDITOR_GATE.md` and `FORMAT_GATE_STATUS.md` for exact subsets and gaps.
 
 ## Provisional order of the next bounded experiments
@@ -58,7 +58,7 @@ access remain contract-only. See `CAPABILITY_MATRIX.md`, `JPEG_GATE_PLAN.md`,
    not a multi-fixture performance qualification.
 
 4. **COG transport only after source and consumer evidence.** The BigTIFF
-   range-window experiment is not a COG reader. First measure local tiled
+   range-window path is not a complete COG product. First measure local tiled
    GeoTIFF/overview byte ranges, requests and ROI amplification against an
    independent oracle; only then consider HTTP, source revision, cache and
    cancellation. Do not infer a `dunia` export format or remote-access need.

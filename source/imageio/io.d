@@ -7,7 +7,12 @@
  */
 module imageio.io;
 
+import std.file : exists, remove, rename;
+import std.path : buildPath, dirName, baseName;
+import std.process : thisProcessID;
+import std.conv : to;
 import transport : ByteSink, WriteError;
+import transport : FileSink;
 
 /** Why a writer did not produce a complete encoded resource. */
 enum ImageWriteError : ubyte
@@ -21,6 +26,22 @@ enum ImageWriteError : ubyte
     sinkFailure,
     truncatedInput,
     outputLimitExceeded
+}
+
+/** Formats available through the bounded format-neutral writer entry point. */
+enum ImageWriteFormat : ubyte { tiff }
+
+/** Native interleaved input shared by the first format-neutral writer slice. */
+struct ImageWriteRequest
+{
+    ImageWriteFormat format;
+    uint width;
+    uint height;
+    ubyte channels;
+    ubyte sampleBytes;
+    uint rowsPerStrip;
+    const(ubyte)[] source;
+    size_t rowStride;
 }
 
 enum ImageReadError : ubyte
@@ -78,6 +99,43 @@ struct ImageWriteOptions
 {
     MetadataPolicy metadata = MetadataPolicy.rejectLoss;
     size_t maximumOutputBytes = size_t.max;
+}
+
+/**
+ * Run an already validated encoder against a same-directory temporary file and
+ * publish it only after the encoder and close both succeed.  The encoder must
+ * not retain the sink after returning.
+ */
+ImageWriteResult writeAtomically(string path,
+    scope ImageWriteResult delegate(ByteSink sink) @safe encoder)
+@safe
+{
+    if (path.length == 0 || encoder is null)
+        return ImageWriteResult(ImageWriteError.invalidDimensions);
+
+    auto directory = dirName(path);
+    auto temporary = buildPath(directory, "." ~ baseName(path)
+        ~ ".imageio-" ~ thisProcessID.to!string ~ ".tmp");
+    try
+    {
+        if (exists(temporary)) remove(temporary);
+        auto sink = new FileSink(temporary);
+        auto result = encoder(sink);
+        sink.close();
+        if (!result.complete)
+        {
+            if (exists(temporary)) remove(temporary);
+            return result;
+        }
+        rename(temporary, path);
+        return result;
+    }
+    catch (Exception)
+    {
+        try if (exists(temporary)) remove(temporary);
+        catch (Exception) { }
+        return ImageWriteResult(ImageWriteError.sinkFailure);
+    }
 }
 
 /** Map a transport sink failure without hiding the bytes already accepted. */

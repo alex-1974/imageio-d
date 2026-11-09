@@ -2,6 +2,17 @@
 
 This file records release changes and post-release validation commitments.
 
+## 0.1.1 — bounded public release
+
+- added the format-neutral bounded TIFF writer entry points `writeImage` and
+  `writeImageFile`;
+- added same-directory atomic file publication and explicit writer request,
+  sink, limit and failure contracts;
+- exposed TIFF decode cost/path reporting for bounded COG-style reads;
+- documented public Sentinel-2/COG window decoding, overview selection and
+  the remaining remote-consumer boundaries;
+- refreshed generated DDox coverage for the new writer and decoder contracts.
+
 ## 0.1.0 — release candidate
 
 - qualified TIFF read/write scope for classic TIFF and BigTIFF UInt8/UInt16

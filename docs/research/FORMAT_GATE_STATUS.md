@@ -55,7 +55,8 @@ API remain open.
 
 ## GeoTIFF
 
-The gate is currently contract-only. Technical GeoTIFF keys may be preserved
+The gate is bounded public technical support, not a complete GeoTIFF product.
+Technical GeoTIFF keys may be preserved
 by imageio-d, while CRS/product binding remains above the I/O boundary. The
 first generated metadata-oracle fixture is now under
 `experiments/geotiff_metadata/`: it creates a 17x13 tiled, DEFLATE-compressed
@@ -108,13 +109,15 @@ to the imageio-d research parser.
 
 ## COG
 
-The gate is currently contract-only. The local range-reader and overview
+The gate has a bounded public local-file path. The local range-reader and overview
 probes are now complemented by `experiments/geotiff_metadata/sentinel_cog_compare.sh`.
 Against the issue #3 Sentinel-2 B02 URL, GDAL reports 10980x10980 UInt16,
 1024x1024 blocks and the expected north-up transform; the script emits a
-32x24 native UInt16 window oracle (1536 bytes) and hashes. This is a
-reproducible external comparison fixture, not a GDAL runtime dependency or an
-imageio-d HTTP API. Offline qualification still requires a pinned local copy.
+32x24 native UInt16 window oracle (1536 bytes) and hashes. The public TIFF
+decoder additionally reports requested/decoded byte counts and whether native
+block traversal was used. This is not a hidden HTTP client: remote access is
+provided by a `transport-d` `ByteSource`. Offline qualification still requires
+a pinned local copy, and real Dunia integration remains open.
 
 GDAL is available locally as an independent fixture/oracle generator; it is
 not a runtime dependency of imageio-d.

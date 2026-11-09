@@ -1,8 +1,8 @@
 # imageio-d — Image I/O research
 
-**Status: 0.1.0 release candidate — publication pending final sign-off.**
+**Status: 0.1.1 release — bounded public release.**
 
-No preview or partial release will be published. The 0.1.0 release has a
+No preview or partial release is implied. The 0.1.1 release has a
 declared supported subset and requires qualified
 read/write support for TIFF, JPEG and PNG, including their declared metadata,
 failure, ownership and consumer contracts. Research probes do not count as
@@ -14,7 +14,7 @@ already-decoded numeric raster/image processing. Investigate existing D
 libraries first; implement only when a consumer-driven experiment shows a
 capability gap and the repository's admission gate is satisfied.
 
-The current branch contains the 0.1.0 release candidate and its research-backed DUB package.
+The current branch contains the 0.1.1 release and its research-backed DUB package.
 public API probes. The qualified research slice includes bounded TIFF ROI
 decoding and explicit TIFF writers for UInt8/UInt16 strips/tiles, classic and
 BigTIFF, Deflate, PackBits, LZW and baseline JPEG-in-TIFF, plus independent
@@ -30,6 +30,20 @@ auto level = selectLevel(levels.levels, width, height);
 auto plan = planRegion(source, x, y, width, height);
 auto pixels = decodeRegion(source, x, y, width, height);
 ```
+
+The bounded public write flow is:
+
+```d
+auto request = ImageWriteRequest(ImageWriteFormat.tiff,
+    width, height, channels, sampleBytes, rowsPerStrip, pixels, rowStride);
+auto result = writeImageFile(path, request);
+```
+
+`writeImage` targets a caller-supplied `ByteSink`; `writeImageFile` stages the
+encoded output in the destination directory and publishes it only after a
+successful encode and close. The format-neutral entry point currently admits
+the bounded classic-TIFF representation. PNG/JPEG and broader TIFF variants
+remain explicit format-specific APIs.
 
 ## Release requirement
 
@@ -136,10 +150,9 @@ public API requirement.
 
 ## Development and activation policy
 
-Current `develop` is research coordination, **not** a released library.
-The repository now contains an unreleased `dub.sdl`, `source/` tree and
-package-root module for reproducible research consumers. These files do not
-constitute a supported release baseline or a frozen public API. Follow
+The repository contains the released `dub.sdl`, `source/` tree and
+package-root module for reproducible consumers. The supported public subset
+and unsupported variants are frozen by the release documentation. Follow
 `AGENTS.md`, `ROADMAP.md` and current workspace engineering rules.
 
 ## Product hypothesis
@@ -197,7 +210,8 @@ uncompressed classic-TIFF writer oracle is under `experiments/tiff_write/`,
 and `experiments/jpeg_gate/` now includes a bounded Pure-D baseline JPEG
 read/write experiment with independent DMD/LDC oracles and explicit variant
 limits.
-None changes the research-only status or admits a public API.
+These research notes do not expand the v0.1.1 supported subset or imply
+support for variants not listed in the release contract.
 For JPEG specifically, the RGB8 transforms in the internal oracle are not a
 proposed production colour API: native components and explicit `color-d`/
 application conversion are the research direction in
