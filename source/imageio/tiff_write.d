@@ -10,7 +10,8 @@ module imageio.tiff_write;
 import std.algorithm.searching : canFind;
 import transport : ByteSink;
 import imageio.io : ImageWriteError, ImageWriteOptions, ImageWriteResult,
-    MetadataDisposition, mapSinkFailure;
+    ImageWriteFormat, ImageWriteRequest, MetadataDisposition, mapSinkFailure,
+    writeAtomically;
 
 struct TiffWriteInfo
 {
@@ -189,8 +190,55 @@ ImageWriteResult writeClassicTiff(ByteSink sink, TiffWriteInfo info,
         hasMetadata ? MetadataDisposition.preserved : MetadataDisposition.notApplicable);
 }
 
+/** Atomically write the bounded classic-TIFF subset to a filesystem path. */
+ImageWriteResult writeClassicTiffFile(string path, TiffWriteInfo info,
+    scope const(ubyte)[] source, size_t rowStride,
+    ImageWriteOptions options = ImageWriteOptions.init,
+    TiffWriteMetadata metadata = TiffWriteMetadata.init) @safe
+{
+    return writeAtomically(path, (ByteSink sink) @safe {
+        return writeClassicTiff(sink, info, source, rowStride, options, metadata);
+    });
+}
+
+/** Format-neutral bounded writer entry point. */
+ImageWriteResult writeImage(ByteSink sink, ImageWriteRequest request,
+    ImageWriteOptions options = ImageWriteOptions.init) @safe
+{
+    if (request.format != ImageWriteFormat.tiff)
+        return ImageWriteResult(ImageWriteError.unsupportedRepresentation);
+    return writeClassicTiff(sink,
+        TiffWriteInfo(request.width, request.height, request.channels,
+            request.sampleBytes, request.rowsPerStrip), request.source,
+        request.rowStride, options);
+}
+
+/** Format-neutral bounded writer entry point with atomic file publication. */
+ImageWriteResult writeImageFile(string path, ImageWriteRequest request,
+    ImageWriteOptions options = ImageWriteOptions.init) @safe
+{
+    return writeAtomically(path, (ByteSink sink) @safe {
+        return writeImage(sink, request, options);
+    });
+}
+
 version (unittest)
 {
+    @safe unittest
+    {
+        import std.file : read, write, remove;
+        import std.path : buildPath;
+        auto path = buildPath("/tmp", "imageio-d-atomic-tiff-test.tif");
+        scope (exit) remove(path);
+        write(path, cast(const(ubyte)[])[0xaa, 0x55]);
+        ubyte[4] pixels = [1, 2, 3, 4];
+        auto result = writeClassicTiffFile(path, TiffWriteInfo(2, 2, 1, 1),
+            pixels[], 2);
+        assert(result.complete);
+        auto bytes = cast(const(ubyte)[]) read(path);
+        assert(bytes.length > 8 && bytes[0] == 'I' && bytes[1] == 'I');
+    }
+
     @safe unittest
     {
         import transport : MemorySink;

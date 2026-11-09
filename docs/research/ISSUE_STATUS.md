@@ -1,6 +1,7 @@
 # Open issue implementation status
 
-This document is the local, evidence-backed status of GitHub issues 1–15.
+This document is the local, evidence-backed status of GitHub issues 1–15,
+24 and 25.
 It does not close GitHub issues or admit a public package. A checked item has
 an executable probe or a documented implementation in this repository.
 
@@ -17,7 +18,7 @@ does not prove a siting convention.
 | Issue | Status | Evidence / remaining boundary |
 |---|---|---|
 | #1 standalone scope | release-candidate | Reference matrix, public read/process/write consumer, API probes and admission decision exist. Local technical gates run in CI; real application integration and second-host evidence are tracked post-release. |
-| #3 GeoTIFF/COG consumer requirement | probe-complete | Sentinel-2 metadata/window oracle, bounded local/HTTP ranges, overviews and UInt16 window comparison pass. No stable public API is admitted. |
+| #3 GeoTIFF/COG consumer requirement | probe-complete | Sentinel-2 metadata/window oracle, bounded local/HTTP ranges, overviews and UInt16 window comparison pass. The bounded public TIFF path is now available; full remote consumer admission remains open. |
 | #4 GeoKey oracle | implemented for technical inspection | GeoKey directory is bounds-checked, preserved and supports inline SHORT lookup plus model/raster/geographic-CRS/projected-CRS IDs. GDAL fixture comparison passes. CRS object construction remains outside imageio. |
 | #5 inspection result | implemented in research API | Dimensions, samples, layout, compression, tiling, predictor, raw NoData value, GeoKey values and affine tag values are exposed. |
 | #6 tiled UInt16 Deflate | implemented/probed | Predictor-2 tiled window decoding passes DMD/LDC, native sample oracle and truncated-input checks. |
@@ -25,6 +26,13 @@ does not prove a siting convention.
 | #8 overview reporting | implemented/probed | Explicit level inspection/selection and decode results now report `levelIndex` and `usedOverview`; no hidden resampling is performed. |
 | #9 raster handoff | probe-complete | Caller-owned bytes, stride, lifetime and retained raster-d lease handoff pass in the consumer probe. |
 | #10 Sentinel-2 comparison | reproducible probe | GDAL metadata and native UInt16 window hashes are recorded. Offline pinned fixture and real imageio consumer admission remain open. |
+
+## Current writer / consumer issues
+
+| Issue | Status | Evidence / remaining boundary |
+|---|---|---|
+| #24 bounded public writer API | implemented for the bounded TIFF slice | `ImageWriteRequest`, `writeImage`, `writeImageFile`, `ByteSink`, typed result errors, output limits and same-directory atomic publication are public. Classic TIFF supports explicit interleaved UInt8/UInt16 input and technical metadata. PNG/JPEG retain their format-specific writer entry points; a universal representation is not implied. |
+| #25 Sentinel-2 COG window decoding | implemented for the bounded public TIFF path | Public `inspect`, `inspectLevels`, `decodeRegion`, `decodeRegionAtLevel` and `decodeRegionAtBestLevel` support bounded tiled reads, DEFLATE, Predictor 2, native UInt16 output and explicit overview selection. Results expose `levelIndex`, `usedOverview`, `bytesRequested`, `decodedBytes` and `fromNativeBlocks`. HTTP transport remains supplied by `transport-d`; real Dunia integration and an offline pinned Sentinel fixture remain validation work. |
 
 ## Cross-cutting performance research
 

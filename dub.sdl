@@ -1,5 +1,5 @@
 name "imageio-d"
-version "0.1.0"
+version "0.1.1"
 description "Research-backed, format-neutral image I/O contracts and bounded TIFF reads for D"
 authors "Alexander Bernardi"
 license "MIT"

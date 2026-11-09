@@ -198,6 +198,14 @@ enum TiffDecodeError : ubyte
     truncated
 }
 
+/** Result of a bounded TIFF ROI decode.
+
+    `bytesRequested` describes encoded source bytes planned for the selected
+    strips or tiles. `decodedBytes` is the native result size, and
+    `fromNativeBlocks` identifies strip/tile traversal rather than an implicit
+    full-image fallback. `levelIndex` and `usedOverview` identify the IFD
+    level selected by the caller.
+ */
 struct TiffDecodeResult
 {
     TiffDecodeError error;
@@ -209,6 +217,12 @@ struct TiffDecodeResult
     /** True when the caller requested best-level selection and an overview
         level was selected instead of the base level. */
     bool usedOverview;
+    /** Encoded source bytes requested for the decoded region. */
+    ulong bytesRequested;
+    /** Native decoded bytes materialized into the result. */
+    ulong decodedBytes;
+    /** True when the result was produced by strip/tile-native traversal. */
+    bool fromNativeBlocks;
 
     @property bool ok() const @safe pure nothrow @nogc
     {
@@ -672,6 +686,13 @@ TiffDecodeResult decodeRegion(ByteSource source, size_t x, size_t y,
     auto decoded = decodeInfo(source, inspection.info, x, y, width, height);
     decoded.sourceInfo = inspection.info;
     decoded.levelIndex = 0;
+    auto planned = planRegion(source, x, y, width, height);
+    if (planned.ok)
+    {
+        decoded.bytesRequested = planned.plan.encodedBytes;
+        decoded.decodedBytes = planned.plan.decodedBytes;
+        decoded.fromNativeBlocks = planned.plan.blockCount != 0;
+    }
     return decoded;
 }
 
@@ -693,6 +714,13 @@ TiffDecodeResult decodeRegionAtLevel(ByteSource source, size_t levelIndex,
     auto decoded = decodeInfo(source, level.info, x, y, width, height);
     decoded.sourceInfo = level.info;
     decoded.levelIndex = levelIndex;
+    auto planned = planRegionAtLevel(source, levelIndex, x, y, width, height);
+    if (planned.ok)
+    {
+        decoded.bytesRequested = planned.plan.encodedBytes;
+        decoded.decodedBytes = planned.plan.decodedBytes;
+        decoded.fromNativeBlocks = planned.plan.blockCount != 0;
+    }
     return decoded;
 }
 
