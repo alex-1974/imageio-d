@@ -2,6 +2,14 @@
 
 This file records release changes and post-release validation commitments.
 
+## Unreleased fixes
+
+- Resolve uniform component BitsPerSample arrays during TIFF inspection, before
+  layout/decode planning. Correct inline integer arrays for classic/BigTIFF and
+  both byte orders. Preserve mixed-depth rejection and bounded metadata reads.
+- Report complete interleaved pixel strides for multi-component TIFF regions;
+  keep per-component channel offsets distinct from the logical X-sample step.
+
 ## 0.1.1 — bounded public release
 
 - added the format-neutral bounded TIFF writer entry points `writeImage` and

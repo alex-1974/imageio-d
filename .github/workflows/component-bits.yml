@@ -1,0 +1,22 @@
+name: Component depth regression
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  component-bits:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        compiler: [dmd-2.111.0, ldc-1.43.0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ${{ matrix.compiler }}
+          dub: 1.40.0
+      - run: sudo apt-get update && sudo apt-get install -y gdal-bin
+      - run: dub test --compiler="$DC"
+      - run: dub build --root=experiments/multichannel_tiff_regression --compiler="$DC" --build=release
+      - run: python3 experiments/multichannel_tiff_regression/check.py experiments/multichannel_tiff_regression/multichannel-tiff-regression

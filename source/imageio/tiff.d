@@ -593,6 +593,8 @@ private TiffInspectionResult inspectIfd(ByteSource source, TiffHeader header,
         info.header.littleEndian);
     if (info.width == 0 || info.height == 0 || info.samplesPerPixel == 0)
         return TiffInspectionResult(TiffInspectionError.invalidMagic);
+    if (!populateComponentBits(source, info))
+        return TiffInspectionResult(TiffInspectionError.truncated);
     if (info.bitsPerSample != 0 && info.bitsPerSample != 8
         && info.bitsPerSample != 16 && info.bitsPerSample != 32)
         return TiffInspectionResult(TiffInspectionError.unsupportedVersion);
@@ -661,6 +663,8 @@ private TiffInspectionResult inspectBigIfd(ByteSource source, TiffHeader header,
     info.nextIfdOffset = read64(ifd[nextPosition .. nextPosition + 8], header.littleEndian);
     if (info.width == 0 || info.height == 0 || info.samplesPerPixel == 0)
         return TiffInspectionResult(TiffInspectionError.invalidMagic);
+    if (!populateComponentBits(source, info))
+        return TiffInspectionResult(TiffInspectionError.truncated);
     if (info.bitsPerSample != 0 && info.bitsPerSample != 8
         && info.bitsPerSample != 16 && info.bitsPerSample != 32)
         return TiffInspectionResult(TiffInspectionError.unsupportedVersion);
@@ -810,8 +814,8 @@ private TiffDecodeResult decodeInfo(ByteSource source, TiffImageInfo info,
         info.header.littleEndian);
     if (info.jpegTables.count != 0 && jpegTables.length == 0)
         return TiffDecodeResult(TiffDecodeError.sourceFailure);
-    auto offsets = readLongValues(source, info.stripOffsets, info.header.littleEndian);
-    auto byteCounts = readLongValues(source, info.stripByteCounts, info.header.littleEndian);
+    auto offsets = readLongValues(source, info.stripOffsets, info.header.littleEndian, info.header.bigTiff);
+    auto byteCounts = readLongValues(source, info.stripByteCounts, info.header.littleEndian, info.header.bigTiff);
     if (offsets.length != info.stripOffsets.count
         || byteCounts.length != info.stripByteCounts.count)
         return TiffDecodeResult(TiffDecodeError.sourceFailure);
@@ -854,7 +858,7 @@ private TiffDecodeResult decodeInfo(ByteSource source, TiffImageInfo info,
     auto format = info.bitsPerSample == 8 ? SampleFormat.u8 : SampleFormat.u16;
     auto description = ImageRegionInfo(width, height, info.samplesPerPixel,
         format, PixelLayout.interleaved, width * bytesPerPixel,
-        bytesPerSample, 0);
+        bytesPerPixel, 0);
     return TiffDecodeResult(TiffDecodeError.none,
         ImageRegion(description, x, y, output));
 }
@@ -991,7 +995,7 @@ private TiffPlanResult planInfo(ByteSource source, TiffImageInfo info,
         auto firstY = y / info.tileLength;
         auto lastY = (y + height - 1) / info.tileLength;
         plan.blockCount = (lastX - firstX + 1) * (lastY - firstY + 1);
-        auto counts = readLongValues(source, info.tileByteCounts, info.header.littleEndian);
+        auto counts = readLongValues(source, info.tileByteCounts, info.header.littleEndian, info.header.bigTiff);
         foreach (tileY; firstY .. lastY + 1)
             foreach (tileX; firstX .. lastX + 1)
             {
@@ -1008,7 +1012,7 @@ private TiffPlanResult planInfo(ByteSource source, TiffImageInfo info,
         auto first = y / info.rowsPerStrip;
         auto last = (y + height - 1) / info.rowsPerStrip;
         plan.blockCount = last - first + 1;
-        auto counts = readLongValues(source, info.stripByteCounts, info.header.littleEndian);
+        auto counts = readLongValues(source, info.stripByteCounts, info.header.littleEndian, info.header.bigTiff);
         if (last >= counts.length)
             return TiffPlanResult(TiffDecodeError.truncated);
         foreach (index; first .. last + 1)
@@ -1090,8 +1094,8 @@ private TiffDecodeResult decodeTiled(ByteSource source, TiffImageInfo info,
     if (info.tileWidth == 0 || info.tileLength == 0
         || info.tileByteCounts.count != info.tileOffsets.count)
         return TiffDecodeResult(TiffDecodeError.unsupportedLayout);
-    auto offsets = readLongValues(source, info.tileOffsets, info.header.littleEndian);
-    auto counts = readLongValues(source, info.tileByteCounts, info.header.littleEndian);
+    auto offsets = readLongValues(source, info.tileOffsets, info.header.littleEndian, info.header.bigTiff);
+    auto counts = readLongValues(source, info.tileByteCounts, info.header.littleEndian, info.header.bigTiff);
     if (offsets.length == 0 || counts.length != offsets.length)
         return TiffDecodeResult(TiffDecodeError.sourceFailure);
     if (info.tileWidth > size_t.max / bytesPerPixel)
@@ -1155,7 +1159,7 @@ private TiffDecodeResult decodeTiled(ByteSource source, TiffImageInfo info,
     auto format = info.bitsPerSample == 8 ? SampleFormat.u8 : SampleFormat.u16;
     auto description = ImageRegionInfo(width, height, info.samplesPerPixel,
         format, PixelLayout.interleaved, width * bytesPerPixel,
-        bytesPerSample, 0);
+        bytesPerPixel, 0);
     return TiffDecodeResult(TiffDecodeError.none,
         ImageRegion(description, x, y, output));
 }
@@ -1255,28 +1259,44 @@ private bool populateGeoTechnical(ByteSource source, ref TiffImageInfo info)
     return true;
 }
 
-private ulong[] readLongValues(ByteSource source, TiffTagReference reference, bool little)
+// Resolve only the already supported 1..4-component uniform SHORT depths.
+// Mixed/malformed component counts remain unknown and fail the decoder's layout
+// gate. Loading these facts during inspection also fixes plan.decodedBytes and
+// decoded.sourceInfo, rather than patching the pixel decoder alone.
+private bool populateComponentBits(ByteSource source, ref TiffImageInfo info) @safe
+{
+    const reference=info.bitsPerSampleValues;
+    if(reference.count<=1 || reference.count>4 || reference.count!=info.samplesPerPixel || reference.type!=3)
+        return true;
+    const values=readLongValues(source,reference,info.header.littleEndian,info.header.bigTiff);
+    if(values.length!=reference.count)return false;
+    foreach(value;values)if(value!=values[0])return true;
+    info.bitsPerSample=cast(uint)values[0];
+    return true;
+}
+
+private ulong[] readLongValues(ByteSource source, TiffTagReference reference, bool little,
+    bool bigTiff=false)
 @safe
 {
     if (reference.count == 0)
         return null;
-    if (reference.count == 1 && (reference.type == 4 || reference.type == 16
-        || reference.type == 17 || reference.type == 18))
-        return [reference.valueOffset];
     if (reference.type != 3 && reference.type != 4 && reference.type != 16
         && reference.type != 17 && reference.type != 18)
         return null;
     auto elementBytes = reference.type == 3 ? 2 :
         (reference.type == 16 || reference.type == 17 || reference.type == 18) ? 8 : 4;
-    if (reference.count == 1 && reference.type == 3)
-        return [little ? reference.valueOffset & 0xffff : reference.valueOffset >> 16];
-    if (reference.type == 3 && reference.count <= 2)
+    const inlineBytes=bigTiff?8:4;
+    if(reference.count>size_t.max/ulong.sizeof)return null;
+    if (reference.count <= inlineBytes/elementBytes)
     {
         auto values = new ulong[](reference.count);
+        const mask=elementBytes==8?ulong.max:(1UL<<(elementBytes*8))-1;
         foreach (i; 0 .. reference.count)
-            values[i] = little
-                ? (reference.valueOffset >> (i * 16)) & 0xffff
-                : (reference.valueOffset >> ((1 - i) * 16)) & 0xffff;
+        {
+            const shift=(little?i*elementBytes:inlineBytes-(i+1)*elementBytes)*8;
+            values[i]=(reference.valueOffset>>shift)&mask;
+        }
         return values;
     }
     auto length = cast(size_t) reference.count * elementBytes;
@@ -1499,6 +1519,72 @@ unittest
     assert(decoded.region.data == [2, 4]);
     assert(decoded.sourceInfo.width == 2 && decoded.sourceInfo.height == 2);
     assert(decoded.sourceInfo.compression == 1);
+}
+
+version(unittest) private ubyte[] bitsArrayFixture(bool little,scope const(ushort)[] bits,uint components,bool big=false)
+@safe
+{
+    const sampleBytes=bits[0]==16?2:1;
+    const dataStart=big?512:160;
+    auto file=new ubyte[dataStart+4*components*sampleBytes];
+    void put16(size_t p,ushort value) @safe
+    {file[p]=cast(ubyte)(little?value:value>>8);file[p+1]=cast(ubyte)(little?value>>8:value);}
+    void put32(size_t p,uint value) @safe
+    {foreach(i;0..4)file[p+i]=cast(ubyte)(value>>(little?8*i:8*(3-i)));}
+    void put64(size_t p,ulong value) @safe
+    {foreach(i;0..8)file[p+i]=cast(ubyte)(value>>(little?8*i:8*(7-i)));}
+    void entry(size_t i,ushort tag,ushort type,uint count,uint value) @safe
+    {
+        const p=(big?24:10)+(big?20:12)*i;put16(p,tag);put16(p+2,type);
+        if(big)put64(p+4,count);else put32(p+4,count);
+        const v=p+(big?12:8);
+        if(tag==258 && count>1 && count*2<=(big?8:4))
+            foreach(j,b;bits)put16(v+2*j,b);
+        else if(type==3 && count==1)put16(v,cast(ushort)value);
+        else if(type==4 && count==1)put32(v,value);
+        else if(big)put64(v,value);else put32(v,value);
+    }
+    file[0]=file[1]=cast(ubyte)(little?'I':'M');
+    if(big){put16(2,43);put16(4,8);put64(8,16);put64(16,9);}
+    else{put16(2,42);put32(4,8);put16(8,9);}
+    entry(0,256,3,1,2);entry(1,257,3,1,2);
+    entry(2,258,3,cast(uint)bits.length,bits.length==1?bits[0]:128);
+    if(!big && bits.length>2)foreach(i,value;bits)put16(128+2*i,value);
+    entry(3,259,3,1,1);entry(4,262,3,1,components==3?2:1);
+    entry(5,273,4,1,dataStart);entry(6,277,3,1,cast(uint)components);
+    entry(7,278,4,1,2);entry(8,279,4,1,cast(uint)(file.length-dataStart));
+    foreach(i;dataStart..file.length)file[i]=cast(ubyte)(i-dataStart+1);
+    return file;
+}
+
+@safe unittest
+{
+    import transport : MemorySource;
+    foreach(big;[false,true])foreach(little;[true,false])foreach(depth;[ushort(8),ushort(16)])foreach(components;[2,3,4])
+    {
+        auto bits=new ushort[components];bits[]=depth;
+        auto file=bitsArrayFixture(little,bits,components,big);
+        auto source=new MemorySource(file);
+        auto metadata=inspect(source);
+        assert(metadata.ok && metadata.info.bitsPerSample==depth,"uniform component bit depth must resolve");
+        auto plan=planRegion(source,1,0,1,2);
+        assert(plan.ok && plan.plan.decodedBytes==2*components*(depth/8));
+        auto decoded=decodeRegion(source,1,0,1,2);
+        assert(decoded.ok && decoded.sourceInfo.bitsPerSample==depth);
+        assert(decoded.region.info.sampleFormat==(depth==8?SampleFormat.u8:SampleFormat.u16));
+        const pixelBytes=components*(depth/8);
+        assert(decoded.region.info.sampleStrideBytes==pixelBytes);
+        assert(decoded.region.info.rowStrideBytes==pixelBytes && decoded.region.info.planeStrideBytes==0);
+        const start=big?512:160;
+        assert(decoded.region.data[0..pixelBytes]==file[start+pixelBytes..start+2*pixelBytes]);
+        assert(decoded.region.data[pixelBytes..$]==file[start+3*pixelBytes..start+4*pixelBytes]);
+    }
+    auto mixed=bitsArrayFixture(true,[ushort(8),16,8],3);
+    assert(decodeRegion(new MemorySource(mixed),0,0,2,2).error==TiffDecodeError.unsupportedLayout);
+    auto wrongCount=bitsArrayFixture(true,[ushort(8),8],3);
+    assert(decodeRegion(new MemorySource(wrongCount),0,0,2,2).error==TiffDecodeError.unsupportedLayout);
+    auto truncated=bitsArrayFixture(true,[ushort(8),8,8],3);
+    assert(!inspect(new MemorySource(truncated[0..130])).ok);
 }
 
 unittest
