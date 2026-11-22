@@ -213,8 +213,13 @@ struct ImageRegionInfo
     size_t componentCount;
     SampleFormat sampleFormat;
     PixelLayout layout;
+    /// Byte distance between rows; zero leaves the compact layout implicit.
     size_t rowStrideBytes = 0;
+    /// Byte distance between adjacent X samples of the SAME component: one
+    /// component sample for planar data, a complete pixel for interleaved data.
+    /// Zero leaves the compact layout implicit; this is not the channel offset.
     size_t sampleStrideBytes = 0;
+    /// Byte distance between planar component origins; zero for interleaved data.
     size_t planeStrideBytes = 0;
     SourceModel sourceModel = SourceModel.unknown;
     SourceColorMetadata colorMetadata;
